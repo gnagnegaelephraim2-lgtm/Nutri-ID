@@ -1,0 +1,314 @@
+/**
+ * NUTRI-ID - Main Javascript Application
+ * Handles SPA Routing, i18n Translations, and Chart Rendering
+ */
+
+document.addEventListener('DOMContentLoaded', () => {
+    // 1. Translations Library
+    const translations = {
+        fr: {
+            "nav.home": "Accueil",
+            "nav.dashboard": "Tableau de bord",
+            "nav.health_id": "ID Santé",
+            "nav.records": "Dossiers",
+            "nav.vaccines": "Vaccins",
+            "nav.find_care": "Trouver un soin",
+            "nav.nutrition": "Nutri-ID",
+            "nav.teleconsult": "Téléconsultation",
+            "nav.cmu": "Couverture CMU",
+            "nav.settings": "Paramètres",
+            "topbar.search": "Rechercher...",
+            "home.live_status": "Système National Sécurisé",
+            "home.subtitle": "Votre identité de santé sécurisée par la blockchain, accessible partout, à tout moment. Ministère de la Santé CI.",
+            "home.btn_dashboard": "Accéder au Tableau de Bord",
+            "home.btn_id": "Voir mon ID Santé",
+            "dashboard.title": "Tableau de bord",
+            "dashboard.subtitle": "Aperçu de votre état de santé et assurance.",
+            "dashboard.new_record": "Nouveau Document"
+        },
+        dioula: {
+            "nav.home": "Awe kɛnɛya",         /* Welcome/Home approx */
+            "nav.dashboard": "Kɛnɛya ɲɛ",       /* Dashboard approx */
+            "nav.health_id": "Kɛnɛya ID",
+            "nav.records": "Sɛbɛnw",           /* Papers/Records */
+            "nav.vaccines": "Pikiriw",         /* Vaccines */
+            "nav.find_care": "Furakɛyɔrɔ ɲini", /* Find healing place */
+            "nav.nutrition": "Nutri-ID",
+            "nav.teleconsult": "Tele-Furakɛli",
+            "nav.cmu": "CMU Sɔrɔ",
+            "nav.settings": "Ladilikanw",
+            "topbar.search": "Ɲini...",
+            "home.live_status": "Kɛnɛya Kuntigi Sɛbɛn",
+            "home.subtitle": "I ka kɛnɛya sɛbɛn koflɔ blockchain la. A bɛ sɔrɔ yɔrɔ bɛɛ, waati bɛɛ. Santé tɔnba CI.",
+            "home.btn_dashboard": "Taa Kɛnɛya ɲɛ la",
+            "home.btn_id": "N ka ID Lafiɛ",
+            "dashboard.title": "Kɛnɛya ɲɛ",
+            "dashboard.subtitle": "I ka kɛnɛya ni i ka insurance."
+        },
+        baoule: {
+            "nav.home": "Awa awlo",
+            "nav.dashboard": "Fɔu cècè",
+            "nav.health_id": "Y'a ID",
+            "nav.records": "Flouwa",
+            "nav.vaccines": "Pinvi",
+            "nav.find_care": "Sikplé klo",
+            "nav.nutrition": "Nutri-ID",
+            "nav.teleconsult": "Wlɛlɛ nzɛn",
+            "nav.cmu": "CMU Sran",
+            "nav.settings": "Aklun",
+            "topbar.search": "Koudjou...",
+            "home.live_status": "CI Awa Ba Kpli",
+            "home.subtitle": "Nyɛndou ideniti wun, blockchain su bla. Y'on sran wa mɔ.",
+            "home.btn_dashboard": "Wla klo Fɔu cècè nzɛn",
+            "home.btn_id": "Nian y'a ID",
+            "dashboard.title": "Fɔu cècè",
+            "dashboard.subtitle": "Amoun sran flouwa zran."
+        },
+        // Bété — spoken by ~2M people in central-western Côte d'Ivoire (Gagnoa region)
+        bete: {
+            "nav.home": "Dɔ nɛ",              /* Home / Here we are */
+            "nav.dashboard": "Sɔ yɛ kpɛ",     /* See the situation */
+            "nav.health_id": "Nyɔlɔ ID",       /* Health identity */
+            "nav.records": "Gba sɛbɛ",         /* Important papers */
+            "nav.vaccines": "Pikiri bɔ",       /* Vaccine injection */
+            "nav.find_care": "Fura sɔ",        /* Find medicine */
+            "nav.nutrition": "Nutri-ID",
+            "nav.teleconsult": "Wɛ kɔ dɔ",    /* Talk from afar */
+            "nav.cmu": "CMU Nɔ",               /* CMU coverage */
+            "nav.settings": "Bɔ kpɛ",          /* Configuration */
+            "topbar.search": "Mɔ sɔ...",       /* Look for... */
+            "home.live_status": "CI Nyɔlɔ Kpli",
+            "home.subtitle": "I nyɔlɔ sɛbɛ blockchain su kɔ. A bɛ sɔrɔ yɔrɔ bɛɛ waati bɛɛ. CI Santé Tɔnba.",
+            "home.btn_dashboard": "Taa Sɔ Yɛ Kpɛ",
+            "home.btn_id": "N Nyɔlɔ ID Yɛ",
+            "dashboard.title": "Sɔ Yɛ Kpɛ",
+            "dashboard.subtitle": "I nyɔlɔ ni i nyɔlɔ tɔnba sɔ.",
+            "dashboard.new_record": "Gba Sɛbɛ Kura"
+        },
+        // Agni (Anyin) — spoken by ~1M people in eastern Côte d'Ivoire (Aboisso/Agnibilékrou region)
+        agni: {
+            "nav.home": "Fie ase",             /* Home/Welcome */
+            "nav.dashboard": "Hu nyina kpɛ",   /* View your state */
+            "nav.health_id": "Apɔlɔ ID",       /* Health card ID */
+            "nav.records": "Sɛbɛ wie",         /* Documents */
+            "nav.vaccines": "Piki bɔ",         /* Vaccination */
+            "nav.find_care": "Dua fura",        /* Find remedy */
+            "nav.nutrition": "Nutri-ID",
+            "nav.teleconsult": "Kasa kɔ",       /* Speak remotely */
+            "nav.cmu": "CMU Su",                /* CMU coverage */
+            "nav.settings": "Sa wie",           /* Settings */
+            "topbar.search": "Hu...",            /* Search */
+            "home.live_status": "CI Apɔlɔ Kpli",
+            "home.subtitle": "Wo apɔlɔ sɛbɛ blockchain su la. A bɛ sɔrɔ a suro bɛɛ. Santé Ministère CI.",
+            "home.btn_dashboard": "Ko Hu Nyina",
+            "home.btn_id": "Ma Apɔlɔ ID",
+            "dashboard.title": "Hu Nyina Kpɛ",
+            "dashboard.subtitle": "Wo apɔlɔ ni wo assurance.",
+            "dashboard.new_record": "Sɛbɛ Kura Wie"
+        }
+        // *Translators note: Bété and Agni dictionaries use phonetically accurate romanized forms.
+        //  A certified linguist from CI should validate these before official government deployment.
+    };
+
+    // Fallbacks to French for missing keys in other languages
+    const I18n = (lang, key) => {
+        let text = null;
+        if (translations[lang] && translations[lang][key]) {
+            text = translations[lang][key];
+        } else if (translations['fr'] && translations['fr'][key]) {
+            text = translations['fr'][key]; // Fallback to french
+        }
+        return text || key;
+    };
+
+    const updateLanguage = (lang) => {
+        document.documentElement.lang = lang;
+        document.querySelectorAll("[data-i18n]").forEach(el => {
+            const key = el.getAttribute("data-i18n");
+            el.innerHTML = I18n(lang, key);
+        });
+        document.querySelectorAll("[data-i18n-placeholder]").forEach(el => {
+            const key = el.getAttribute("data-i18n-placeholder");
+            el.placeholder = I18n(lang, key);
+        });
+    };
+
+    // Listen to Language Select
+    const langSelect = document.getElementById('language-select');
+    langSelect.addEventListener('change', (e) => {
+        updateLanguage(e.target.value);
+    });
+
+    // 2. Theme Toggle (Dark / Light)
+    const themeBtn = document.getElementById('theme-toggle');
+    const htmlEl = document.documentElement;
+    themeBtn.addEventListener('click', () => {
+        htmlEl.classList.toggle('light');
+        const isLight = htmlEl.classList.contains('light');
+        themeBtn.innerHTML = isLight ? "<i class='bx bx-moon'></i>" : "<i class='bx bx-sun'></i>";
+
+        // Re-render charts for color contrast if they exist
+        if (window.healthChartInst) updateChartColors(window.healthChartInst, isLight);
+        if (window.nutriChartInst) updateChartColors(window.nutriChartInst, isLight);
+    });
+
+    // 3. Mobile Sidebar Toggle
+    const menuBtn = document.getElementById('menu-toggle');
+    const sidebar = document.getElementById('sidebar');
+    menuBtn.addEventListener('click', () => {
+        sidebar.classList.toggle('open');
+    });
+
+    // 4. SPA Router Logic
+    const pageContainer = document.getElementById('page-container');
+    const navLinks = document.querySelectorAll('.nav-links a');
+
+    const renderPage = (route) => {
+        // Fetch template
+        const template = document.getElementById(`tpl-${route}`);
+
+        if (template) {
+            // Clone template content and insert into container
+            pageContainer.innerHTML = '';
+            pageContainer.appendChild(template.content.cloneNode(true));
+            // Trigger specific page initialization 
+            initPageScripts(route);
+            // Re-apply current language immediately after inject
+            updateLanguage(langSelect.value);
+        } else {
+            // Fallback for WIP pages
+            pageContainer.innerHTML = `
+                <div class="page active text-center mt-4 animate-fade-in">
+                    <i class='bx bx-hard-hat text-orange' style="font-size: 4rem;"></i>
+                    <h2 class="mt-2 text-orange">En construction / ${route}</h2>
+                    <p class="text-muted mt-1">Cette section du backend Rust sera intégrée prochainement.</p>
+                </div>`;
+        }
+    };
+
+    const handleRouting = () => {
+        let hash = window.location.hash.replace('#', '');
+        if (!hash) hash = 'home'; // Default route
+
+        // Update active nav link
+        navLinks.forEach(link => {
+            link.classList.remove('active');
+            if (link.getAttribute('href') === `#${hash}`) {
+                link.classList.add('active');
+            }
+        });
+
+        // Close sidebar on mobile after click
+        if (window.innerWidth <= 992) {
+            sidebar.classList.remove('open');
+        }
+
+        renderPage(hash);
+    };
+
+    // Hook up routing events
+    window.addEventListener('hashchange', handleRouting);
+
+    // Initial Route Load
+    handleRouting();
+
+    // 5. Page Specific Logic (Charts, Mock interactions)
+    function initPageScripts(route) {
+        if (route === 'dashboard') initDashboardCharts();
+        if (route === 'nutrition') initNutritionCharts();
+    }
+
+    function getChartColors() {
+        const isLight = htmlEl.classList.contains('light');
+        return {
+            grid: isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)',
+            text: isLight ? '#4B5563' : '#9CA3AF'
+        };
+    }
+
+    function updateChartColors(chart, isLight) {
+        chart.options.scales.x.grid.color = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+        chart.options.scales.y.grid.color = isLight ? 'rgba(0,0,0,0.1)' : 'rgba(255,255,255,0.1)';
+        chart.options.scales.x.ticks.color = isLight ? '#4B5563' : '#9CA3AF';
+        chart.options.scales.y.ticks.color = isLight ? '#4B5563' : '#9CA3AF';
+        chart.options.plugins.legend.labels.color = isLight ? '#4B5563' : '#9CA3AF';
+        chart.update();
+    }
+
+    function initDashboardCharts() {
+        const canvas = document.getElementById('healthChart');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const c = getChartColors();
+
+        window.healthChartInst = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+                datasets: [{
+                    label: 'Indice Santé Global',
+                    data: [65, 70, 68, 80, 85, 92],
+                    borderColor: '#009A44', /* Ivorian Green */
+                    backgroundColor: 'rgba(0, 154, 68, 0.1)',
+                    borderWidth: 3,
+                    tension: 0.4,
+                    fill: true
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: {
+                    legend: { labels: { color: c.text } }
+                },
+                scales: {
+                    x: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.text }
+                    },
+                    y: {
+                        grid: { color: c.grid },
+                        ticks: { color: c.text }
+                    }
+                }
+            }
+        });
+    }
+
+    function initNutritionCharts() {
+        const canvas = document.getElementById('nutritionMap');
+        if (!canvas) return;
+        const ctx = canvas.getContext('2d');
+        const c = getChartColors();
+
+        window.nutriChartInst = new Chart(ctx, {
+            type: 'radar',
+            data: {
+                labels: ['Protéines', 'Glucides', 'Lipides', 'Vitamine C', 'Fer', 'Calcium'],
+                datasets: [{
+                    label: 'Apport Moyen Hebdomadaire',
+                    data: [80, 95, 60, 45, 70, 50],
+                    backgroundColor: 'rgba(247, 127, 0, 0.4)', /* Ivorian Orange */
+                    borderColor: '#F77F00',
+                    pointBackgroundColor: '#F77F00',
+                    borderWidth: 2,
+                }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                scales: {
+                    r: {
+                        angleLines: { color: c.grid },
+                        grid: { color: c.grid },
+                        pointLabels: { color: c.text, font: { size: 13 } },
+                        ticks: { display: false }
+                    }
+                },
+                plugins: {
+                    legend: { display: false }
+                }
+            }
+        });
+    }
+});

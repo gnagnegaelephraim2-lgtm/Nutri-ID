@@ -1,0 +1,109 @@
+version: '3.8'
+
+services:
+  # ───────────────────────────────────────────────
+  # PostgreSQL — National Health Database
+  # ───────────────────────────────────────────────
+  postgres:
+    image: postgres:15-alpine
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-nutriid_admin}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
+      POSTGRES_DB: ${POSTGRES_DB:-nutriid_national_db}
+    ports:
+      - "5432:5432"
+    volumes:
+      - pgdata:/var/lib/postgresql/data
+    networks:
+      - nutriid-net
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nutriid_admin}" ]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+
+  # ───────────────────────────────────────────────
+  # Backend — Rust / Axum API Server
+  # ───────────────────────────────────────────────
+  backend:
+    build:
+      context: ./backend
+      dockerfile: Dockerfile
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - DATABASE_URL=postgres://${POSTGRES_USER:-nutriid_admin}:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/${POSTGRES_DB:-nutriid_national_db}
+      - RUST_LOG=${RUST_LOG:-info}
+      - JWT_SECRET=${JWT_SECRET}
+      - POLYGON_RPC_URL=${POLYGON_RPC_URL:-https://rpc-amoy.polygon.technology}
+      - POLYGON_CHAIN_ID=${POLYGON_CHAIN_ID:-80002}
+      - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
+      - HEALTH_ID_CONTRACT_ADDRESS=${HEALTH_ID_CONTRACT_ADDRESS}
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - nutriid-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost:3000/api/health" ]
+      interval: 30s
+      timeout: 10s
+      start_period: 15s
+      retries: 3
+
+  # ───────────────────────────────────────────────
+  # Nginx — Reverse Proxy + SSL Termination + Frontend Static Serving
+  # ───────────────────────────────────────────────
+  nginx:
+    image: nginx:1.25-alpine
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    volumes:
+      # Nginx configuration
+      - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
+      # Frontend static files served directly by Nginx
+      - ./frontend:/usr/share/nginx/html:ro
+      # Let's Encrypt SSL certificates (managed by Certbot)
+      - certbot-certs:/etc/letsencrypt:ro
+      # Certbot webroot for ACME challenge
+      - certbot-webroot:/var/www/certbot:ro
+      # Nginx logs
+      - nginx-logs:/var/log/nginx
+    depends_on:
+      backend:
+        condition: service_healthy
+    networks:
+      - nutriid-net
+    healthcheck:
+      test: [ "CMD", "curl", "-f", "http://localhost/api/health" ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+
+  # ───────────────────────────────────────────────
+  # Certbot — Automatic SSL Certificate Renewal
+  # ───────────────────────────────────────────────
+  certbot:
+    image: certbot/certbot:latest
+    volumes:
+      - certbot-certs:/etc/letsencrypt
+      - certbot-webroot:/var/www/certbot
+    # Renew certificates every 12 hours, reload Nginx on renewal
+    entrypoint: "/bin/sh -c 'trap exit TERM; while :; do certbot renew --webroot -w /var/www/certbot --quiet; sleep 12h & wait $${!}; done'"
+    depends_on:
+      - nginx
+
+volumes:
+  pgdata:
+  certbot-certs:
+  certbot-webroot:
+  nginx-logs:
+
+
+networks:
+  nutriid-net:
+    driver: bridge

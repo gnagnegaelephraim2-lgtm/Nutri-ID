@@ -1,0 +1,17 @@
+{
+  "name": "nutriid-contracts",
+  "version": "1.0.0",
+  "description": "Smart contracts for Nutri-ID HealthTech Platform",
+  "main": "index.js",
+  "scripts": {
+    "compile": "hardhat compile",
+    "test": "hardhat test",
+    "deploy:local": "hardhat run scripts/deploy.js --network localhost",
+    "deploy:polygon_amoy": "hardhat run scripts/deploy.js --network polygonAmoy"
+  },
+  "dependencies": {
+    "@nomicfoundation/hardhat-toolbox": "^4.0.0",
+    "dotenv": "^16.4.5",
+    "hardhat": "^2.22.0"
+  }
+}

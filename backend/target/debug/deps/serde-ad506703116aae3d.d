@@ -1,0 +1,12 @@
+C:\Users\DELL\OneDrive\Desktop\Nutri-ID\backend\target\debug\deps\serde-ad506703116aae3d.d: C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\DELL\OneDrive\Desktop\Nutri-ID\backend\target\debug\build\serde-2debad09e2a4bb94\out/private.rs
+
+C:\Users\DELL\OneDrive\Desktop\Nutri-ID\backend\target\debug\deps\libserde-ad506703116aae3d.rmeta: C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs C:\Users\DELL\OneDrive\Desktop\Nutri-ID\backend\target\debug\build\serde-2debad09e2a4bb94\out/private.rs
+
+C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\lib.rs:
+C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\integer128.rs:
+C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\mod.rs:
+C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\de.rs:
+C:\Users\DELL\.cargo\registry\src\index.crates.io-1949cf8c6b5b557f\serde-1.0.228\src\private\ser.rs:
+C:\Users\DELL\OneDrive\Desktop\Nutri-ID\backend\target\debug\build\serde-2debad09e2a4bb94\out/private.rs:
+
+# env-dep:OUT_DIR=C:\\Users\\DELL\\OneDrive\\Desktop\\Nutri-ID\\backend\\target\\debug\\build\\serde-2debad09e2a4bb94\\out

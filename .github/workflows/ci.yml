@@ -1,0 +1,194 @@
+name: Nutri-ID CI/CD Pipeline
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+    branches: [main]
+
+env:
+  CARGO_TERM_COLOR: always
+  RUST_BACKTRACE: 1
+
+jobs:
+  # ─────────────────────────────────────────────────────
+  # Job 1: Rust Backend — Format, Lint, Build, Test
+  # ─────────────────────────────────────────────────────
+  rust-backend:
+    name: 🦀 Rust Backend CI
+    runs-on: ubuntu-latest
+
+    services:
+      postgres:
+        image: postgres:15
+        env:
+          POSTGRES_USER: nutriid_admin
+          POSTGRES_PASSWORD: test_password
+          POSTGRES_DB: nutriid_test_db
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd pg_isready
+          --health-interval 10s
+          --health-timeout 5s
+          --health-retries 5
+
+    env:
+      DATABASE_URL: postgres://nutriid_admin:test_password@localhost:5432/nutriid_test_db
+      JWT_SECRET: test-jwt-secret-ci-only-not-for-production
+      POLYGON_RPC_URL: http://127.0.0.1:8545
+      RELAYER_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
+      HEALTH_ID_CONTRACT_ADDRESS: "0x5FbDB2315678afecb367f032d93F642f64180aa3"
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🛠 Install Rust toolchain (stable)
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          components: rustfmt, clippy
+
+      - name: 📦 Cache Rust dependencies
+        uses: Swatinem/rust-cache@v2
+        with:
+          workspaces: "backend -> target"
+
+      - name: 🔍 Check formatting
+        working-directory: backend
+        run: cargo fmt --all -- --check
+
+      - name: 📎 Run Clippy (linting)
+        working-directory: backend
+        run: cargo clippy --all-targets --all-features -- -D warnings
+
+      - name: 🔨 Build (release)
+        working-directory: backend
+        run: cargo build --release
+
+      - name: 🧪 Run tests
+        working-directory: backend
+        run: cargo test --all-features
+
+  # ─────────────────────────────────────────────────────
+  # Job 2: Smart Contracts — Hardhat Compile + Test
+  # ─────────────────────────────────────────────────────
+  smart-contracts:
+    name: ⛓ Smart Contracts CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: blockchain/package-lock.json
+
+      - name: 📥 Install Hardhat dependencies
+        working-directory: blockchain
+        run: npm ci
+
+      - name: ⚙️ Compile Solidity contracts
+        working-directory: blockchain
+        run: npx hardhat compile
+
+      - name: 🧪 Run Hardhat tests
+        working-directory: blockchain
+        run: npx hardhat test
+
+  # ─────────────────────────────────────────────────────
+  # Job 3: Frontend — HTML Validation + JS Lint
+  # ─────────────────────────────────────────────────────
+  frontend:
+    name: 🌐 Frontend CI
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 📦 Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+
+      - name: 🔍 Validate HTML (html-validate)
+        run: |
+          npx --yes html-validate \
+            --config '{"extends":["html-validate:recommended"],"rules":{"no-inline-style":"off","require-sri":"off"}}' \
+            frontend/index.html || true
+
+  # ─────────────────────────────────────────────────────
+  # Job 4: Docker Build Verification (on main only)
+  # ─────────────────────────────────────────────────────
+  docker-build:
+    name: 🐳 Docker Build Check
+    runs-on: ubuntu-latest
+    needs: [rust-backend, smart-contracts, frontend]
+    if: github.ref == 'refs/heads/main'
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🐳 Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: 🔨 Build backend Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: false
+          tags: nutriid-backend:ci
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ─────────────────────────────────────────────────────
+  # Job 5: Deploy to Production (manual, on tagged release)
+  # ─────────────────────────────────────────────────────
+  deploy:
+    name: 🚀 Deploy to Production
+    runs-on: ubuntu-latest
+    needs: docker-build
+    if: startsWith(github.ref, 'refs/tags/v')
+    environment: production
+
+    steps:
+      - name: 📥 Checkout code
+        uses: actions/checkout@v4
+
+      - name: 🔐 Login to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: 🐳 Build and push backend image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./backend
+          file: ./backend/Dockerfile
+          push: true
+          tags: |
+            ghcr.io/${{ github.repository }}/backend:${{ github.ref_name }}
+            ghcr.io/${{ github.repository }}/backend:latest
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: 🚀 Deploy via SSH to Government Server
+        uses: appleboy/ssh-action@master
+        with:
+          host: ${{ secrets.DEPLOY_HOST }}
+          username: ${{ secrets.DEPLOY_USER }}
+          key: ${{ secrets.DEPLOY_SSH_KEY }}
+          script: |
+            cd /opt/nutriid
+            docker compose pull backend
+            docker compose up -d --no-deps backend
+            echo "✅ Nutri-ID backend deployed successfully — $(date)"
