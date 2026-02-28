@@ -1,7 +1,7 @@
+use crate::blockchain::{has_health_id, mint_health_id, BlockchainConfig, MintResult};
 use axum::{routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::SqlitePool;
-use crate::blockchain::{BlockchainConfig, mint_health_id, has_health_id, MintResult};
 
 pub fn router() -> Router<SqlitePool> {
     Router::new()

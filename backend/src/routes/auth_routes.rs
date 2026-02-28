@@ -1,11 +1,6 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    routing::post,
-    Json, Router,
-};
+use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
-use sqlx::{SqlitePool, Row};
+use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
 #[derive(Deserialize)]
@@ -63,7 +58,7 @@ async fn me_handler(
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
         WHERE u.id = ?
-        "#
+        "#,
     )
     .bind(&id_str)
     .fetch_optional(&pool)
@@ -109,7 +104,10 @@ async fn update_me_handler(
 ) -> Result<Json<serde_json::Value>, ApiError> {
     let id_str = claims.sub.to_string();
 
-    let mut tx = pool.begin().await.map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     // We only update if the fields are provided.
     if let Some(name) = payload.full_name {
@@ -149,7 +147,8 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET date_of_birth = ? WHERE user_id = ?")
             .bind(dob)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
@@ -157,7 +156,8 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET sex = ? WHERE user_id = ?")
             .bind(sex)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
@@ -165,7 +165,8 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET height = ? WHERE user_id = ?")
             .bind(height)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
@@ -173,7 +174,8 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET weight = ? WHERE user_id = ?")
             .bind(weight)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
@@ -181,7 +183,8 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET allergies = ? WHERE user_id = ?")
             .bind(allergies)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
@@ -189,13 +192,18 @@ async fn update_me_handler(
         sqlx::query("UPDATE patients SET emergency_contact = ? WHERE user_id = ?")
             .bind(contact)
             .bind(&id_str)
-            .execute(&mut *tx).await
+            .execute(&mut *tx)
+            .await
             .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
-    tx.commit().await.map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    tx.commit()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    Ok(Json(serde_json::json!({ "message": "Profile updated successfully" })))
+    Ok(Json(
+        serde_json::json!({ "message": "Profile updated successfully" }),
+    ))
 }
 
 /// POST /api/auth/login — validates credentials against DB, returns JWT
@@ -203,32 +211,45 @@ async fn login_handler(
     State(pool): State<SqlitePool>,
     Json(payload): Json<LoginPayload>,
 ) -> Result<Json<AuthResponse>, ApiError> {
-    let row = sqlx::query(
-        "SELECT id, password_hash, role FROM users WHERE email = ?"
-    )
-    .bind(&payload.email)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let row = sqlx::query("SELECT id, password_hash, role FROM users WHERE email = ?")
+        .bind(&payload.email)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     let row = match row {
         Some(r) => r,
-        None => return Err(api_err(StatusCode::UNAUTHORIZED, "Invalid email or password")),
+        None => {
+            return Err(api_err(
+                StatusCode::UNAUTHORIZED,
+                "Invalid email or password",
+            ))
+        }
     };
 
-    let id_str: String = row.try_get("id").map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
-    let hash: String = row.try_get("password_hash").map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
-    let role: String = row.try_get("role").map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let id_str: String = row
+        .try_get("id")
+        .map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let hash: String = row
+        .try_get("password_hash")
+        .map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let role: String = row
+        .try_get("role")
+        .map_err(|e: sqlx::Error| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     // Parse UUID from stored TEXT
-    let id = Uuid::parse_str(&id_str).map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let id = Uuid::parse_str(&id_str)
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     // Verify bcrypt password hash
     let valid = bcrypt::verify(&payload.password, &hash)
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     if !valid {
-        return Err(api_err(StatusCode::UNAUTHORIZED, "Invalid email or password"));
+        return Err(api_err(
+            StatusCode::UNAUTHORIZED,
+            "Invalid email or password",
+        ));
     }
 
     let token = crate::auth::create_jwt(id, &role);
@@ -260,31 +281,37 @@ async fn register_handler(
     let id = Uuid::new_v4();
     let id_str = id.to_string();
 
-    let mut tx = pool.begin().await.map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    sqlx::query(
-        "INSERT INTO users (id, email, password_hash, role) VALUES (?, ?, ?, ?)"
-    )
-    .bind(&id_str)
-    .bind(&payload.email)
-    .bind(&hash)
-    .bind(&role)
-    .execute(&mut *tx)
-    .await
-    .map_err(|e| {
-        if e.to_string().contains("UNIQUE constraint") {
-            api_err(StatusCode::CONFLICT, "Email already registered")
-        } else {
-            api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string())
-        }
-    })?;
+    sqlx::query("INSERT INTO users (id, email, password_hash, role) VALUES (?, ?, ?, ?)")
+        .bind(&id_str)
+        .bind(&payload.email)
+        .bind(&hash)
+        .bind(&role)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            if e.to_string().contains("UNIQUE constraint") {
+                api_err(StatusCode::CONFLICT, "Email already registered")
+            } else {
+                api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string())
+            }
+        })?;
 
     if role == "PATIENT" {
-        let name = payload.full_name.unwrap_or_else(|| "Nouveau Patient".to_string());
-        
+        let name = payload
+            .full_name
+            .unwrap_or_else(|| "Nouveau Patient".to_string());
+
         let nip = match payload.national_id {
             Some(n) if !n.trim().is_empty() => n,
-            _ => format!("CI-TEMP-{}", &Uuid::new_v4().to_string()[..8].to_uppercase()),
+            _ => format!(
+                "CI-TEMP-{}",
+                &Uuid::new_v4().to_string()[..8].to_uppercase()
+            ),
         };
 
         sqlx::query(
@@ -299,7 +326,9 @@ async fn register_handler(
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
     }
 
-    tx.commit().await.map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    tx.commit()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     let token = crate::auth::create_jwt(id, &role);
     Ok(Json(AuthResponse { token, role }))

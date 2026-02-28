@@ -1,17 +1,11 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    routing::post,
-    Json, Router,
-};
-use serde::{Deserialize, Serialize};
-use sqlx::{SqlitePool, Row};
-use std::env;
 use crate::auth::Claims;
+use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use serde::{Deserialize, Serialize};
+use sqlx::{Row, SqlitePool};
+use std::env;
 
 pub fn router() -> Router<SqlitePool> {
-    Router::new()
-        .route("/chat", post(chat_handler))
+    Router::new().route("/chat", post(chat_handler))
 }
 
 #[derive(Deserialize, Debug)]
@@ -49,7 +43,7 @@ async fn chat_handler(
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
         WHERE u.id = ?
-        "#
+        "#,
     )
     .bind(&id_str)
     .fetch_optional(&pool)
@@ -58,10 +52,14 @@ async fn chat_handler(
 
     let mut user_context = String::new();
     if let Some(row) = user_row {
-        let name: String = row.try_get("full_name").unwrap_or_else(|_| "Utilisateur".into());
+        let name: String = row
+            .try_get("full_name")
+            .unwrap_or_else(|_| "Utilisateur".into());
         let nip: String = row.try_get("national_id").unwrap_or_default();
-        let blood: String = row.try_get("blood_type").unwrap_or_else(|_| "Inconnu".into());
-        
+        let blood: String = row
+            .try_get("blood_type")
+            .unwrap_or_else(|_| "Inconnu".into());
+
         user_context = format!(
             "Tu parles à {}. NIP: {}. Groupe sanguin: {}.",
             name, nip, blood
@@ -79,7 +77,10 @@ async fn chat_handler(
     );
 
     let api_key = env::var("GEMINI_API_KEY").map_err(|_| {
-        (StatusCode::INTERNAL_SERVER_ERROR, "GEMINI_API_KEY non configurée".into())
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "GEMINI_API_KEY non configurée".into(),
+        )
     })?;
 
     let client = reqwest::Client::new();
@@ -94,7 +95,11 @@ async fn chat_handler(
     if let Some(history) = payload.history {
         for msg in history {
             // "model" is Gemini's role name for itself
-            let role = if msg.role == "bot" || msg.role == "model" { "model" } else { "user" };
+            let role = if msg.role == "bot" || msg.role == "model" {
+                "model"
+            } else {
+                "user"
+            };
             let texts: Vec<String> = msg.parts.into_iter().map(|p| p.text).collect();
             contents.as_array_mut().unwrap().push(serde_json::json!({
                 "role": role,
@@ -120,20 +125,32 @@ async fn chat_handler(
         }
     });
 
-    let res = client.post(&url)
+    let res = client
+        .post(&url)
         .json(&gemini_req)
         .send()
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Erreur réseau Gemini: {}", e)))?;
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Erreur réseau Gemini: {}", e),
+            )
+        })?;
 
     if !res.status().is_success() {
         let err_text = res.text().await.unwrap_or_default();
         tracing::error!("Gemini API Error: {}", err_text);
-        return Err((StatusCode::BAD_GATEWAY, format!("Erreur API Gemini: {}", err_text)));
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("Erreur API Gemini: {}", err_text),
+        ));
     }
 
     let raw_json: serde_json::Value = res.json().await.map_err(|e| {
-        (StatusCode::INTERNAL_SERVER_ERROR, format!("Erreur parsing réponse Gemini: {}", e))
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Erreur parsing réponse Gemini: {}", e),
+        )
     })?;
 
     // Extract text from: { "candidates": [ { "content": { "parts": [ { "text": "..." } ] } } ] }

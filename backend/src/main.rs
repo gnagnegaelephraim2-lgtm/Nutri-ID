@@ -1,17 +1,14 @@
-use axum::{
-    routing::get,
-    Router, Json,
-};
+use axum::{routing::get, Json, Router};
 use serde::Serialize;
 use std::net::SocketAddr;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
+mod auth;
+mod blockchain;
 mod db;
 mod models;
 mod routes;
-mod auth;
-mod blockchain;
 
 #[derive(Serialize)]
 struct HealthStatusResponse {
@@ -35,15 +32,16 @@ async fn main() {
 
     tracing_subscriber::registry()
         .with(tracing_subscriber::EnvFilter::new(
-            std::env::var("RUST_LOG").unwrap_or_else(|_| "nutriid_backend=debug,tower_http=debug".into()),
+            std::env::var("RUST_LOG")
+                .unwrap_or_else(|_| "nutriid_backend=debug,tower_http=debug".into()),
         ))
         .with(tracing_subscriber::fmt::layer())
         .init();
 
     // Initialize Database pool and run migrations
-    let pool = db::init_db().await.expect(
-        "Failed to connect to SQLite. Check DATABASE_URL in .env"
-    );
+    let pool = db::init_db()
+        .await
+        .expect("Failed to connect to SQLite. Check DATABASE_URL in .env");
     tracing::info!("✅ Database connected and migrations applied.");
 
     let cors = CorsLayer::new()
@@ -60,7 +58,7 @@ async fn main() {
 
     let addr = SocketAddr::from(([127, 0, 0, 1], 3000));
     tracing::info!("🚀 Nutri-ID backend listening on http://{}", addr);
-    
+
     let listener = tokio::net::TcpListener::bind(addr).await.unwrap();
     axum::serve(listener, app).await.unwrap();
 }

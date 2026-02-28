@@ -1,17 +1,11 @@
-use axum::{
-    extract::State,
-    http::StatusCode,
-    routing::get,
-    Json, Router,
-};
-use sqlx::{SqlitePool, Row};
 use crate::auth::Claims;
-use crate::models::record::{HealthRecord, CreateRecordRequest};
+use crate::models::record::{CreateRecordRequest, HealthRecord};
+use axum::{extract::State, http::StatusCode, routing::get, Json, Router};
+use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
 pub fn router() -> Router<SqlitePool> {
-    Router::new()
-        .route("/", get(list_records).post(create_record))
+    Router::new().route("/", get(list_records).post(create_record))
 }
 
 /// GET /api/records — returns health records (JWT required)
@@ -26,22 +20,25 @@ async fn list_records(
         FROM health_records
         ORDER BY created_at DESC
         LIMIT 100
-        "#
+        "#,
     )
     .fetch_all(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
 
-    let records = rows.iter().map(|r| HealthRecord {
-        id:                 r.try_get("id").unwrap_or_default(),
-        patient_id:         r.try_get("patient_id").unwrap_or_default(),
-        doctor_id:          r.try_get("doctor_id").ok(),
-        record_type:        r.try_get("record_type").unwrap_or_default(),
-        ipfs_cid:           r.try_get("ipfs_cid").unwrap_or_default(),
-        document_hash:      r.try_get("document_hash").unwrap_or_default(),
-        blockchain_tx_hash: r.try_get("blockchain_tx_hash").ok(),
-        created_at:         r.try_get("created_at").ok(),
-    }).collect::<Vec<_>>();
+    let records = rows
+        .iter()
+        .map(|r| HealthRecord {
+            id: r.try_get("id").unwrap_or_default(),
+            patient_id: r.try_get("patient_id").unwrap_or_default(),
+            doctor_id: r.try_get("doctor_id").ok(),
+            record_type: r.try_get("record_type").unwrap_or_default(),
+            ipfs_cid: r.try_get("ipfs_cid").unwrap_or_default(),
+            document_hash: r.try_get("document_hash").unwrap_or_default(),
+            blockchain_tx_hash: r.try_get("blockchain_tx_hash").ok(),
+            created_at: r.try_get("created_at").ok(),
+        })
+        .collect::<Vec<_>>();
 
     Ok(Json(records))
 }

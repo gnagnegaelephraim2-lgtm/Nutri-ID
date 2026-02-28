@@ -1,7 +1,7 @@
-pub mod auth_routes;
-pub mod records_routes;
-pub mod blockchain_routes;
 pub mod ai_routes;
+pub mod auth_routes;
+pub mod blockchain_routes;
+pub mod records_routes;
 
 use axum::Router;
 use sqlx::SqlitePool;

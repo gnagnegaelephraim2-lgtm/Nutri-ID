@@ -1,13 +1,13 @@
-use serde::{Deserialize, Serialize};
 use jsonwebtoken::{encode, EncodingKey, Header};
-use uuid::Uuid;
+use serde::{Deserialize, Serialize};
 use std::env;
+use uuid::Uuid;
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct Claims {
-    pub sub: Uuid,          // User ID
-    pub role: String,       // PATIENT, DOCTOR, ADMIN
-    pub exp: usize,         // Expiration time
+    pub sub: Uuid,    // User ID
+    pub role: String, // PATIENT, DOCTOR, ADMIN
+    pub exp: usize,   // Expiration time
 }
 
 // Secret key for JWT (In production, read from env)
@@ -60,18 +60,26 @@ where
         parts: &mut axum::http::request::Parts,
         _state: &S,
     ) -> Result<Self, Self::Rejection> {
-        let auth_header = parts.headers.get(axum::http::header::AUTHORIZATION)
+        let auth_header = parts
+            .headers
+            .get(axum::http::header::AUTHORIZATION)
             .and_then(|value| value.to_str().ok())
             .unwrap_or_default();
 
         if !auth_header.starts_with("Bearer ") {
-            return Err((axum::http::StatusCode::UNAUTHORIZED, "Missing or invalid Authorization header".to_string()));
+            return Err((
+                axum::http::StatusCode::UNAUTHORIZED,
+                "Missing or invalid Authorization header".to_string(),
+            ));
         }
 
         let token = &auth_header["Bearer ".len()..];
 
         verify_jwt(token).map_err(|e| {
-            (axum::http::StatusCode::UNAUTHORIZED, format!("Invalid token: {}", e))
+            (
+                axum::http::StatusCode::UNAUTHORIZED,
+                format!("Invalid token: {}", e),
+            )
         })
     }
 }

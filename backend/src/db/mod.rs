@@ -1,10 +1,10 @@
-use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
+use sqlx::{sqlite::SqlitePoolOptions, SqlitePool};
 use std::env;
 
 pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
     // Default to a local file — no installation needed
-    let db_url = env::var("DATABASE_URL")
-        .unwrap_or_else(|_| "sqlite:./nutriid.db?mode=rwc".to_string());
+    let db_url =
+        env::var("DATABASE_URL").unwrap_or_else(|_| "sqlite:./nutriid.db?mode=rwc".to_string());
 
     let pool = SqlitePoolOptions::new()
         .max_connections(5)
@@ -12,9 +12,7 @@ pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
         .await?;
 
     // Run embedded migrations
-    sqlx::migrate!("./migrations")
-        .run(&pool)
-        .await?;
+    sqlx::migrate!("./migrations").run(&pool).await?;
 
     tracing::info!("✅ SQLite DB connected at: {}", db_url);
     Ok(pool)

@@ -96,7 +96,9 @@ fn rpc_call_tcp(host: &str, body_json: &str) -> Result<serde_json::Value> {
         body_json.len(),
         body_json
     );
-    stream.write_all(request.as_bytes()).context("TCP write failed")?;
+    stream
+        .write_all(request.as_bytes())
+        .context("TCP write failed")?;
 
     let mut response = String::new();
     stream
@@ -276,8 +278,7 @@ fn sign_legacy_tx(
     let signing_key = SigningKey::try_from(key_bytes.as_slice())
         .map_err(|e| anyhow::anyhow!("Invalid secp256k1 private key: {}", e))?;
 
-    let to_bytes =
-        hex::decode(to.trim_start_matches("0x")).context("Invalid 'to' address hex")?;
+    let to_bytes = hex::decode(to.trim_start_matches("0x")).context("Invalid 'to' address hex")?;
     anyhow::ensure!(to_bytes.len() == 20, "'to' address must be 20 bytes");
 
     // 1. RLP-encode the unsigned transaction with EIP-155 replay-protection fields
@@ -419,7 +420,11 @@ pub async fn mint_health_id(
         .ok_or_else(|| anyhow::anyhow!("eth_sendRawTransaction returned non-string result"))?
         .to_string();
 
-    tracing::info!("✅ HealthID mint submitted | tx_hash={} | NIP={}", tx_hash, nip);
+    tracing::info!(
+        "✅ HealthID mint submitted | tx_hash={} | NIP={}",
+        tx_hash,
+        nip
+    );
 
     Ok(MintResult {
         tx_hash,
