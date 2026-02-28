@@ -3,7 +3,12 @@
  * Handles SPA Routing, i18n Translations, and Chart Rendering
  */
 
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener('DOMContentLoaded', async () => {
+    // Wait for Auth Manager to initialize and fetch user profile
+    if (window.nutriAuth) {
+        await window.nutriAuth.init();
+    }
+
     // 1. Translations Library
     const translations = {
         fr: {
@@ -171,6 +176,11 @@ document.addEventListener('DOMContentLoaded', () => {
             // Clone template content and insert into container
             pageContainer.innerHTML = '';
             pageContainer.appendChild(template.content.cloneNode(true));
+
+            // Add 'active' class to show the page
+            const pageEl = pageContainer.querySelector('.page');
+            if (pageEl) pageEl.classList.add('active');
+
             // Trigger specific page initialization 
             initPageScripts(route);
             // Re-apply current language immediately after inject
@@ -189,6 +199,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const handleRouting = () => {
         let hash = window.location.hash.replace('#', '');
         if (!hash) hash = 'home'; // Default route
+
+        // Guard the route using AuthManager
+        if (window.nutriAuth && !window.nutriAuth.guardRoute(hash)) {
+            return; // guardRoute handles the redirect
+        }
 
         // Update active nav link
         navLinks.forEach(link => {
@@ -212,10 +227,82 @@ document.addEventListener('DOMContentLoaded', () => {
     // Initial Route Load
     handleRouting();
 
-    // 5. Page Specific Logic (Charts, Mock interactions)
+    // 5. Page Specific Logic (Charts, Map, AI, Web3)
     function initPageScripts(route) {
-        if (route === 'dashboard') initDashboardCharts();
-        if (route === 'nutrition') initNutritionCharts();
+        if (route === 'dashboard') {
+            initDashboardCharts();
+        }
+        if (route === 'nutrition') {
+            initNutritionCharts();
+            window.nutriBot = new NutriBot();
+            window.nutriBot.init();
+        }
+        if (route === 'find-care') {
+            // Map strictly requires container to be painted. Timeout ensures css applied.
+            setTimeout(() => {
+                window.nutriMap = new HealthMap();
+                window.nutriMap.init();
+            }, 50);
+        }
+        if (route === 'health-id') {
+            // Re-init every time — template is freshly cloned, button needs re-binding
+            if (window.nutriWeb3) {
+                window.nutriWeb3.init();
+            }
+        }
+        if (route === 'records') {
+            if (window.nutriRecords) {
+                window.nutriRecords.init();
+            }
+        }
+        if (route === 'login') {
+            const form = document.getElementById('login-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = form.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Connexion...';
+                    try {
+                        await window.nutriAuth.login(
+                            document.getElementById('login-email').value,
+                            document.getElementById('login-password').value
+                        );
+                        window.location.hash = '#home';
+                    } catch (err) {
+                        alert(err.message);
+                        btn.disabled = false;
+                        btn.innerHTML = 'Se connecter <i class="bx bx-right-arrow-alt"></i>';
+                    }
+                });
+            }
+        }
+        if (route === 'register') {
+            const form = document.getElementById('register-form');
+            if (form) {
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = form.querySelector('button[type="submit"]');
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Création...';
+                    try {
+                        await window.nutriAuth.register({
+                            email: document.getElementById('reg-email').value,
+                            password: document.getElementById('reg-password').value,
+                            full_name: document.getElementById('reg-name').value,
+                            blood_type: document.getElementById('reg-blood').value,
+                            national_id: document.getElementById('reg-nip').value,
+                            role: 'PATIENT'
+                        });
+                        window.location.hash = '#home';
+                    } catch (err) {
+                        alert(err.message);
+                        btn.disabled = false;
+                        btn.innerHTML = 'Créer mon compte <i class="bx bx-right-arrow-alt"></i>';
+                    }
+                });
+            }
+        }
     }
 
     function getChartColors() {

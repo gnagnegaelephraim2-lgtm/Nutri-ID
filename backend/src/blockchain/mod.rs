@@ -193,10 +193,11 @@ pub async fn mint_health_id(
     recipient_address: &str,
     nip: &str,
 ) -> Result<MintResult> {
-    let calldata = calldata_mint(recipient_address, nip)?;
+    let _calldata = calldata_mint(recipient_address, nip)?;
     let rpc_host = config.rpc_host.clone();
     let relayer_key = config.relayer_private_key.clone();
-    let contract = config.health_id_contract_address.clone();
+    let _contract = config.health_id_contract_address.clone();
+
 
     tracing::info!("🔗 Preparing HealthID mint | NIP={} | recipient={}", nip, recipient_address);
 

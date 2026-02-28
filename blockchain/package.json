@@ -9,9 +9,12 @@
     "deploy:local": "hardhat run scripts/deploy.js --network localhost",
     "deploy:polygon_amoy": "hardhat run scripts/deploy.js --network polygonAmoy"
   },
-  "dependencies": {
+  "devDependencies": {
     "@nomicfoundation/hardhat-toolbox": "^4.0.0",
-    "dotenv": "^16.4.5",
     "hardhat": "^2.22.0"
+  },
+  "dependencies": {
+    "@openzeppelin/contracts": "^5.4.0",
+    "dotenv": "^16.4.5"
   }
 }

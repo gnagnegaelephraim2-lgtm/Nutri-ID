@@ -58,13 +58,8 @@
                         data-i18n="nav.settings">Paramètres</span></a></li>
         </ul>
 
-        <div class="user-profile">
-            <img src="https://ui-avatars.com/api/?name=Kouadio+A.&background=F77F00&color=fff" alt="Profile"
-                class="avatar">
-            <div class="user-info">
-                <h4>Kouadio A.</h4>
-                <p>NIP: 00129482</p>
-            </div>
+        <div class="bottom-user" style="display: none;">
+            <!-- Injected by AuthManager -->
         </div>
     </nav>
 
@@ -104,6 +99,96 @@
     </main>
 
     <!-- Partial Templates (Injected dynamically) -->
+
+    <!-- LOGIN TEMPLATE -->
+    <template id="tpl-login">
+        <div class="page auth-page animate-fade-in"
+            style="display: flex; justify-content: center; align-items: center; min-height: 80vh;">
+            <div class="card glass" style="width: 100%; max-width: 400px; padding: 2rem;">
+                <div class="text-center mb-3">
+                    <i class='bx bx-plus-medical text-green' style="font-size: 3rem;"></i>
+                    <h2 class="mt-1">Bienvenue sur Nutri-ID</h2>
+                    <p class="text-muted">Connectez-vous à votre espace santé</p>
+                </div>
+                <form id="login-form">
+                    <div class="form-group mb-2">
+                        <label>Email</label>
+                        <input type="email" id="login-email" class="search-bar" style="width: 100%; margin-top: 0.5rem;"
+                            required placeholder="votre@email.com">
+                    </div>
+                    <div class="form-group mb-3">
+                        <label>Mot de passe</label>
+                        <input type="password" id="login-password" class="search-bar"
+                            style="width: 100%; margin-top: 0.5rem;" required placeholder="••••••••">
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">Se connecter <i
+                            class='bx bx-right-arrow-alt'></i></button>
+                </form>
+                <p class="text-center mt-3 text-sm">
+                    Pas encore de compte ? <a href="#register"
+                        style="color: var(--color-orange); font-weight: 600;">Créer mon ID Santé</a>
+                </p>
+            </div>
+        </div>
+    </template>
+
+    <!-- REGISTER TEMPLATE -->
+    <template id="tpl-register">
+        <div class="page auth-page animate-fade-in"
+            style="display: flex; justify-content: center; align-items: center; min-height: 80vh; padding-bottom: 2rem;">
+            <div class="card glass" style="width: 100%; max-width: 450px; padding: 2rem;">
+                <div class="text-center mb-3">
+                    <div class="ci-flag" style="margin: 0 auto 1rem;"></div>
+                    <h2 class="mt-1">Créer mon ID Santé</h2>
+                    <p class="text-muted">Rejoignez le réseau national de santé</p>
+                </div>
+                <form id="register-form">
+                    <div class="form-group mb-2">
+                        <label>Nom et Prénoms *</label>
+                        <input type="text" id="reg-name" class="search-bar" style="width: 100%; margin-top: 0.5rem;"
+                            required placeholder="Gnagne, Chrys Elisée">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Email *</label>
+                        <input type="email" id="reg-email" class="search-bar" style="width: 100%; margin-top: 0.5rem;"
+                            required placeholder="votre@email.com">
+                    </div>
+                    <div class="form-group mb-2">
+                        <label>Mot de passe *</label>
+                        <input type="password" id="reg-password" class="search-bar"
+                            style="width: 100%; margin-top: 0.5rem;" required minlength="6" placeholder="••••••••">
+                    </div>
+                    <div class="id-row mt-2 mb-3">
+                        <div>
+                            <label class="text-sm">NIP (Optionnel)</label>
+                            <input type="text" id="reg-nip" class="search-bar" style="width: 100%; margin-top: 0.5rem;"
+                                placeholder="CI-...">
+                        </div>
+                        <div>
+                            <label class="text-sm">Groupe Sanguin</label>
+                            <select id="reg-blood" class="search-bar"
+                                style="width: 100%; margin-top: 0.5rem; background: rgba(0,0,0,0.2);">
+                                <option value="O+">O+</option>
+                                <option value="O-">O-</option>
+                                <option value="A+">A+</option>
+                                <option value="A-">A-</option>
+                                <option value="B+">B+</option>
+                                <option value="B-">B-</option>
+                                <option value="AB+">AB+</option>
+                                <option value="AB-">AB-</option>
+                            </select>
+                        </div>
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full bg-orange">Créer mon compte <i
+                            class='bx bx-right-arrow-alt'></i></button>
+                </form>
+                <p class="text-center mt-3 text-sm">
+                    Déjà inscrit ? <a href="#login" style="color: var(--color-green); font-weight: 600;">Se
+                        connecter</a>
+                </p>
+            </div>
+        </div>
+    </template>
 
     <!-- HOME TEMPLATE -->
     <template id="tpl-home">
@@ -227,6 +312,23 @@
                 <p class="text-muted">Votre identité numérique infalsifiable.</p>
             </div>
 
+            <!-- Wallet Connect Bar -->
+            <div class="wallet-bar glass mb-3">
+                <div class="wallet-bar-left">
+                    <span id="wallet-status" class="wallet-status">
+                        <i class='bx bxs-wallet'></i> Non connecté
+                    </span>
+                    <span id="network-status" style="margin-left:1rem;"></span>
+                </div>
+                <button id="connect-wallet-btn" class="btn btn-primary btn-sm">
+                    <i class='bx bx-wallet-alt'></i> Connecter mon Portefeuille
+                </button>
+            </div>
+
+            <!-- SBT Verification Badge -->
+            <div id="sbt-verification" class="sbt-badge-wrapper mb-3"></div>
+
+            <!-- Health ID Card -->
             <div class="id-card-wrapper">
                 <div class="id-card national-card">
                     <div class="card-top">
@@ -238,29 +340,47 @@
                         <i class='bx bx-pulse text-orange card-logo'></i>
                     </div>
                     <div class="card-mid">
-                        <img src="https://ui-avatars.com/api/?name=Kouadio+A.&size=120&background=ccc" class="id-photo"
-                            alt="Photo">
+                        <img id="hid-photo" src="https://ui-avatars.com/api/?name=Gnagne+C.&size=120&background=ccc"
+                            class="id-photo" alt="Photo">
                         <div class="id-details">
                             <p class="label">Noms et Prénoms / Name</p>
-                            <h4>KOUADIO, AMANI JEAN</h4>
+                            <h4 id="hid-name">GNAGNE, CHRYS ELISÉE</h4>
 
                             <div class="id-row">
                                 <div>
                                     <p class="label">Né(e) le / DOB</p>
-                                    <p>14/05/1988</p>
+                                    <p id="hid-dob">14/05/1988</p>
                                 </div>
                                 <div>
                                     <p class="label">Sexe / Sex</p>
-                                    <p>M</p>
+                                    <p id="hid-sex">M</p>
                                 </div>
                                 <div>
                                     <p class="label">Groupe Sanguin</p>
-                                    <p class="blood-type">O+</p>
+                                    <!-- Live: populated by web3.js -->
+                                    <p class="blood-type" id="hid-blood-type">O+</p>
                                 </div>
                             </div>
 
                             <p class="label mt-1">Numéro d'Identification Personnel (NIP)</p>
-                            <h3 class="nip-number">CI-88-14-00129482</h3>
+                            <!-- Live: hash from blockchain -->
+                            <h3 class="nip-number" id="hid-nip" title="Valeur chiffrée sur la blockchain">
+                                CI-88-14-00129482</h3>
+
+                            <div class="id-row mt-1">
+                                <div>
+                                    <p class="label">CMU</p>
+                                    <p id="hid-cmu-status" class="text-green">Actif ✓</p>
+                                </div>
+                                <div>
+                                    <p class="label">Émis le</p>
+                                    <p id="hid-issued-at">—</p>
+                                </div>
+                                <div>
+                                    <p class="label">Token ID</p>
+                                    <p id="hid-token-id" style="color:#8247E5;font-weight:600;">—</p>
+                                </div>
+                            </div>
                         </div>
                     </div>
                     <div class="card-bottom">
@@ -268,19 +388,21 @@
                             <i class='bx bx-qr'></i>
                         </div>
                         <div class="blockchain-verify">
-                            <p><i class='bx bx-link'></i> Verified on Polygon</p>
-                            <span class="hash">0x8f4d...3b9a</span>
+                            <p><i class='bx bx-link'></i> Secured on Polygon</p>
+                            <span class="hash" id="hid-wallet-short">0x????...????</span>
                         </div>
                     </div>
                 </div>
             </div>
 
-            <div class="card glass mt-4 mx-auto max-w-lg">
+            <!-- Info Card -->
+            <div class="card glass mt-4" style="max-width:520px;margin:1rem auto 0;">
                 <div class="card-body text-center">
-                    <i class='bx bxl-polygon text-2xl text-purple' style="color: #8247E5; font-size: 2rem;"></i>
-                    <h3 class="mt-2">Smart Contract Bilingue</h3>
-                    <p class="text-sm text-muted mt-1">Ce token soulbound (SBT) prouve votre identité auprès des
-                        hôpitaux sans dévoiler votre dossier médical complet. Vos données sont cryptées.</p>
+                    <i class='bx bxl-polygon' style="color:#8247E5;font-size:2rem;"></i>
+                    <h3 class="mt-2">Soulbound Token (SBT) — ERC-721</h3>
+                    <p class="text-sm text-muted mt-1">Ce token est non-transférable et prouve votre identité auprès des
+                        hôpitaux partenaires sans dévoiler l'intégralité de votre dossier. Vos données NIP sont
+                        cryptées.</p>
                 </div>
             </div>
         </div>
@@ -359,7 +481,7 @@
     <template id="tpl-find-care">
         <div class="page map-page animate-fade-in">
             <div class="page-header">
-                <h2>Trouver un Soin (Hôpitaux & Pharmacies)</h2>
+                <h2>Trouver un Soin (Hôpitaux &amp; Pharmacies)</h2>
                 <p class="text-muted">Recherchez les centres de santé affiliés à la CMU.</p>
             </div>
             <div class="card glass">
@@ -370,6 +492,63 @@
         </div>
     </template>
 
+    <!-- RECORDS TEMPLATE -->
+    <template id="tpl-records">
+        <div class="page records-page animate-fade-in">
+            <div class="page-header">
+                <h2><i class='bx bx-folder-open text-orange'></i> Dossiers Médicaux Blockchain</h2>
+                <p class="text-muted">Vos dossiers médicaux chiffrés, stockés sur IPFS et ancrés sur Polygon.</p>
+            </div>
+
+            <!-- Wallet Connect Bar -->
+            <div class="wallet-bar glass mb-3">
+                <div class="wallet-bar-left">
+                    <i class='bx bxs-wallet'></i>
+                    <span id="records-wallet-status" style="margin-left:0.5rem;">Non connecté</span>
+                </div>
+                <button id="records-connect-btn" class="btn btn-primary btn-sm">
+                    <i class='bx bx-wallet-alt'></i> Connecter mon Portefeuille
+                </button>
+            </div>
+
+            <!-- Loading State -->
+            <div id="records-loading"
+                style="display:none;justify-content:center;align-items:center;gap:0.75rem;padding:2rem;">
+                <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;color:#F77F00;"></i>
+                <span>Chargement des dossiers depuis la blockchain...</span>
+            </div>
+
+            <!-- Empty / Error State -->
+            <div id="records-empty" style="display:none;text-align:center;padding:3rem;opacity:0.7;">
+                <i class='bx bx-folder-open' style="font-size:3rem;"></i>
+                <p class="mt-2">Aucun dossier médical enregistré sur la blockchain.</p>
+            </div>
+
+            <!-- Records List -->
+            <div id="records-list" class="records-grid">
+                <!-- Injected by web3.js HealthRecordManager -->
+            </div>
+
+            <!-- Info Footer -->
+            <div class="card glass mt-4" style="max-width:600px;margin:1.5rem auto 0;">
+                <div class="card-body">
+                    <h4><i class='bx bx-shield-quarter text-green'></i> Sécurité &amp; Confidentialité</h4>
+                    <p class="text-sm text-muted mt-1">Chaque dossier est chiffré, haché (SHA-256) et son CID IPFS est
+                        ancré sur la blockchain. Seuls vous et les médecins autorisés peuvent accéder au contenu.</p>
+                    <div class="id-row mt-2">
+                        <div><i class='bx bx-lock-alt text-orange'></i> <span class="text-sm">Chiffrement E2E</span>
+                        </div>
+                        <div><i class='bx bx-fingerprint text-green'></i> <span class="text-sm">IPFS Décentralisé</span>
+                        </div>
+                        <div><i class='bx bx-check-shield' style="color:#8247E5"></i> <span class="text-sm">Polygon
+                                SBT</span></div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <script src="js/auth.js"></script>
     <script src="js/web3.js"></script>
     <script src="js/ai.js"></script>
     <script src="js/map.js"></script>
