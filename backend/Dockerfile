@@ -1,7 +1,7 @@
 # =============================================================================
 # Stage 1: Builder — Compile the Rust binary in a full Rust environment
 # =============================================================================
-FROM rust:stable-slim-bookworm AS builder
+FROM rust:slim-bookworm AS builder
 
 # Build dependencies:
 #   pkg-config      — lets cargo locate system libs
