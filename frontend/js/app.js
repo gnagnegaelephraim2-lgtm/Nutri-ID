@@ -264,6 +264,7 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
         if (route === 'nutrition') {
             initNutritionCharts();
+            initNutritionLogs();
             window.nutriBot = new NutriBot();
             window.nutriBot.init();
         }
@@ -508,6 +509,153 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
+    }
+
+    async function initNutritionLogs() {
+        const API = 'http://localhost:3000/api/nutrition';
+        const token = window.nutriAuth?.token;
+
+        // Live calorie preview while user fills the form
+        const calcPreview = () => {
+            const p = parseFloat(document.getElementById('meal-proteins')?.value) || 0;
+            const c = parseFloat(document.getElementById('meal-carbs')?.value) || 0;
+            const f = parseFloat(document.getElementById('meal-fats')?.value) || 0;
+            const kcal = p * 4 + c * 4 + f * 9;
+            const el = document.getElementById('meal-calories-preview');
+            if (el) el.textContent = kcal > 0 ? `≈ ${Math.round(kcal)} kcal` : '';
+        };
+        ['meal-proteins', 'meal-carbs', 'meal-fats'].forEach(id => {
+            document.getElementById(id)?.addEventListener('input', calcPreview);
+        });
+
+        // Meal log form submission
+        const form = document.getElementById('meal-log-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('meal-submit-btn');
+                const msg = document.getElementById('meal-log-msg');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Enregistrement...';
+                msg.style.display = 'none';
+
+                try {
+                    const res = await fetch(API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            meal_name: document.getElementById('meal-name').value,
+                            proteins: parseFloat(document.getElementById('meal-proteins').value) || 0,
+                            carbs: parseFloat(document.getElementById('meal-carbs').value) || 0,
+                            fats: parseFloat(document.getElementById('meal-fats').value) || 0
+                        })
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+
+                    form.reset();
+                    document.getElementById('meal-calories-preview').textContent = '';
+                    msg.innerHTML = "<i class='bx bx-check-circle'></i> Repas enregistré !";
+                    msg.style.color = 'var(--color-green)';
+                    msg.style.display = 'block';
+                    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+                    // Refresh the logs display
+                    await loadAndRenderLogs();
+                } catch (err) {
+                    msg.innerHTML = `<i class='bx bx-error-circle'></i> Erreur: ${err.message}`;
+                    msg.style.color = 'var(--color-orange)';
+                    msg.style.display = 'block';
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "<i class='bx bx-save'></i> Enregistrer";
+                }
+            });
+        }
+
+        await loadAndRenderLogs();
+
+        async function loadAndRenderLogs() {
+            const loadingEl = document.getElementById('meal-logs-loading');
+            const emptyEl = document.getElementById('meal-logs-empty');
+            const listEl = document.getElementById('meal-logs-list');
+            const todayLoading = document.getElementById('today-loading');
+
+            if (!listEl) return;
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+            listEl.innerHTML = '';
+
+            try {
+                const res = await fetch(API, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error('Erreur API');
+                const logs = await res.json();
+
+                if (loadingEl) loadingEl.style.display = 'none';
+
+                if (!logs || logs.length === 0) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    updateTodaySummary([]);
+                    return;
+                }
+
+                // Render logs list
+                logs.forEach(log => {
+                    const date = log.logged_at
+                        ? new Date(log.logged_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })
+                        : '—';
+                    const kcal = Math.round(log.calories);
+                    const row = document.createElement('div');
+                    row.style.cssText = 'display:flex;justify-content:space-between;align-items:center;padding:0.6rem 0;border-bottom:1px solid var(--border-color);';
+                    row.innerHTML = `
+                        <div>
+                            <strong style="font-size:0.95rem;">${log.meal_name}</strong>
+                            <div class="text-sm text-muted">${date}</div>
+                        </div>
+                        <div style="text-align:right;white-space:nowrap;">
+                            <span class="text-orange" style="font-weight:600;">${kcal} kcal</span>
+                            <div class="text-sm text-muted">P:${log.proteins}g G:${log.carbs}g L:${log.fats}g</div>
+                        </div>`;
+                    listEl.appendChild(row);
+                });
+
+                // Today's summary (logs whose logged_at date matches today)
+                const todayStr = new Date().toISOString().slice(0, 10);
+                const todayLogs = logs.filter(l => l.logged_at && l.logged_at.startsWith(todayStr));
+                updateTodaySummary(todayLogs);
+
+            } catch (err) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (listEl) listEl.innerHTML = `<p class="text-sm text-muted text-center">${err.message}</p>`;
+                updateTodaySummary([]);
+            }
+        }
+
+        function updateTodaySummary(todayLogs) {
+            const totP = todayLogs.reduce((s, l) => s + (l.proteins || 0), 0);
+            const totC = todayLogs.reduce((s, l) => s + (l.carbs || 0), 0);
+            const totF = todayLogs.reduce((s, l) => s + (l.fats || 0), 0);
+            const totKcal = Math.round(totP * 4 + totC * 4 + totF * 9);
+
+            const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
+            set('today-calories', totKcal);
+            set('today-proteins', `${Math.round(totP)}g`);
+            set('today-carbs', `${Math.round(totC)}g`);
+            set('today-fats', `${Math.round(totF)}g`);
+
+            // Progress bars — reference daily targets (WHO-ish: 50g protein, 260g carbs, 70g fat)
+            const pct = (val, max) => Math.min(100, Math.round((val / max) * 100));
+            const setBar = (id, val, max) => {
+                const el = document.getElementById(id);
+                if (el) el.style.width = pct(val, max) + '%';
+            };
+            setBar('bar-proteins', totP, 50);
+            setBar('bar-carbs', totC, 260);
+            setBar('bar-fats', totF, 70);
+        }
     }
 
     function initNutritionCharts() {

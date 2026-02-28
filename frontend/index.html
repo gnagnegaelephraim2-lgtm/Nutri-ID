@@ -417,46 +417,116 @@
             </div>
 
             <div class="grid-layout">
+
+                <!-- Meal Log Form -->
                 <div class="card glass">
                     <div class="card-header">
-                        <h3>Plat du Jour : Garba</h3>
+                        <h3><i class='bx bx-plus-circle text-orange'></i> Enregistrer un repas</h3>
                     </div>
-                    <img src="https://images.unsplash.com/photo-1546069901-ba9599a7e63c?ixlib=rb-4.0.3&auto=format&fit=crop&w=500&q=60"
-                        class="card-img" alt="Food" style="height: 150px; object-fit: cover;">
                     <div class="card-body">
-                        <div class="nutri-bars">
-                            <div class="progress-item">
-                                <div class="p-label"><span>Protéines (Poisson)</span> <span>45g</span></div>
-                                <div class="progress-bar">
-                                    <div class="fill bg-orange" style="width: 70%"></div>
+                        <form id="meal-log-form">
+                            <div class="form-group mb-2">
+                                <label class="text-sm">Nom du repas</label>
+                                <input type="text" id="meal-name" class="search-bar"
+                                    style="width:100%;margin-top:0.5rem;"
+                                    placeholder="Ex: Garba, Foutou banane, Riz sauce graine" required>
+                            </div>
+                            <div class="id-row mt-2 mb-2">
+                                <div>
+                                    <label class="text-sm">Protéines (g)</label>
+                                    <input type="number" id="meal-proteins" class="search-bar"
+                                        style="width:100%;margin-top:0.4rem;" min="0" step="0.1" placeholder="0"
+                                        required>
+                                </div>
+                                <div>
+                                    <label class="text-sm">Glucides (g)</label>
+                                    <input type="number" id="meal-carbs" class="search-bar"
+                                        style="width:100%;margin-top:0.4rem;" min="0" step="0.1" placeholder="0"
+                                        required>
+                                </div>
+                                <div>
+                                    <label class="text-sm">Lipides (g)</label>
+                                    <input type="number" id="meal-fats" class="search-bar"
+                                        style="width:100%;margin-top:0.4rem;" min="0" step="0.1" placeholder="0"
+                                        required>
                                 </div>
                             </div>
-                            <div class="progress-item">
-                                <div class="p-label"><span>Glucides (Attiéké)</span> <span>80g</span></div>
-                                <div class="progress-bar">
-                                    <div class="fill bg-green" style="width: 90%"></div>
-                                </div>
-                            </div>
-                            <div class="progress-item">
-                                <div class="p-label"><span>Lipides (Huile)</span> <span>30g</span></div>
-                                <div class="progress-bar">
-                                    <div class="fill text-orange" style="width: 40%; background: #F77F00;"></div>
-                                </div>
-                            </div>
-                        </div>
-                        <button class="btn btn-primary w-full mt-2">Log Meal</button>
+                            <div id="meal-calories-preview" class="text-center text-sm text-muted mb-2"
+                                style="min-height:1.4rem;"></div>
+                            <button type="submit" id="meal-submit-btn" class="btn btn-primary w-full">
+                                <i class='bx bx-save'></i> Enregistrer
+                            </button>
+                            <div id="meal-log-msg" class="mt-2 text-center text-sm" style="display:none;"></div>
+                        </form>
                     </div>
                 </div>
 
+                <!-- Today's Summary -->
+                <div class="card glass border-green">
+                    <div class="card-header">
+                        <h3><i class='bx bx-bar-chart-alt-2 text-green'></i> Aujourd'hui</h3>
+                    </div>
+                    <div class="card-body">
+                        <div class="text-center mb-3">
+                            <h2 id="today-calories" class="text-orange"
+                                style="font-size:2.5rem;font-weight:700;">—</h2>
+                            <p class="text-muted text-sm">kcal aujourd'hui</p>
+                        </div>
+                        <div class="nutri-bars">
+                            <div class="progress-item">
+                                <div class="p-label"><span>Protéines</span> <span id="today-proteins">—</span></div>
+                                <div class="progress-bar">
+                                    <div id="bar-proteins" class="fill bg-orange" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div class="progress-item">
+                                <div class="p-label"><span>Glucides</span> <span id="today-carbs">—</span></div>
+                                <div class="progress-bar">
+                                    <div id="bar-carbs" class="fill bg-green" style="width:0%"></div>
+                                </div>
+                            </div>
+                            <div class="progress-item">
+                                <div class="p-label"><span>Lipides</span> <span id="today-fats">—</span></div>
+                                <div class="progress-bar">
+                                    <div id="bar-fats" class="fill" style="width:0%;background:#F77F00;"></div>
+                                </div>
+                            </div>
+                        </div>
+                        <div id="today-loading" class="text-center text-sm text-muted mt-2" style="display:none;">
+                            <i class='bx bx-loader-alt bx-spin'></i> Chargement...
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Radar Chart -->
                 <div class="card glass span-2">
                     <div class="card-header">
-                        <h3>Analyse Alimentaire</h3>
+                        <h3>Analyse Alimentaire (Semaine)</h3>
                     </div>
                     <div class="card-body">
                         <canvas id="nutritionMap" height="200"></canvas>
                     </div>
                 </div>
 
+                <!-- Recent Logs -->
+                <div class="card glass span-2">
+                    <div class="card-header">
+                        <h3><i class='bx bx-list-ul'></i> Repas récents</h3>
+                    </div>
+                    <div class="card-body">
+                        <div id="meal-logs-loading" class="text-center text-muted" style="display:none;padding:1rem 0;">
+                            <i class='bx bx-loader-alt bx-spin' style="font-size:1.5rem;"></i>
+                        </div>
+                        <div id="meal-logs-empty"
+                            class="text-center text-muted" style="display:none;padding:1.5rem 0;">
+                            <i class='bx bxs-bowl-hot' style="font-size:2.5rem;"></i>
+                            <p class="mt-1 text-sm">Aucun repas enregistré. Commencez par logger un repas !</p>
+                        </div>
+                        <div id="meal-logs-list"></div>
+                    </div>
+                </div>
+
+                <!-- NutriBot Chat -->
                 <div class="card glass span-2">
                     <div class="card-header">
                         <h3><i class='bx bx-brain'></i> Assistant IA NutriBot</h3>

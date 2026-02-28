@@ -8,20 +8,23 @@ pub fn router() -> Router<SqlitePool> {
     Router::new().route("/", get(list_records).post(create_record))
 }
 
-/// GET /api/records — returns health records (JWT required)
+/// GET /api/records — returns health records for the authenticated patient (JWT required)
 async fn list_records(
-    _claims: Claims,
+    claims: Claims,
     State(pool): State<SqlitePool>,
 ) -> Result<Json<Vec<HealthRecord>>, (StatusCode, String)> {
+    let patient_id = claims.sub.to_string();
     let rows = sqlx::query(
         r#"
         SELECT id, patient_id, doctor_id, record_type,
                ipfs_cid, document_hash, blockchain_tx_hash, created_at
         FROM health_records
+        WHERE patient_id = ?
         ORDER BY created_at DESC
         LIMIT 100
         "#,
     )
+    .bind(&patient_id)
     .fetch_all(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -43,19 +46,21 @@ async fn list_records(
     Ok(Json(records))
 }
 
-/// POST /api/records — creates a new health record (JWT required)
+/// POST /api/records — creates a health record owned by the authenticated patient (JWT required)
 async fn create_record(
-    _claims: Claims,
+    claims: Claims,
     State(pool): State<SqlitePool>,
     Json(payload): Json<CreateRecordRequest>,
 ) -> Result<Json<HealthRecord>, (StatusCode, String)> {
     let id = Uuid::new_v4().to_string();
+    // Always use the token's subject as patient_id — ignore any client-supplied value
+    let patient_id = claims.sub.to_string();
 
     sqlx::query(
-        "INSERT INTO health_records (id, patient_id, record_type, ipfs_cid, document_hash) VALUES (?, ?, ?, ?, ?)"
+        "INSERT INTO health_records (id, patient_id, record_type, ipfs_cid, document_hash) VALUES (?, ?, ?, ?, ?)",
     )
     .bind(&id)
-    .bind(&payload.patient_id)
+    .bind(&patient_id)
     .bind(&payload.record_type)
     .bind(&payload.ipfs_cid)
     .bind(&payload.document_hash)
@@ -65,7 +70,7 @@ async fn create_record(
 
     Ok(Json(HealthRecord {
         id,
-        patient_id: payload.patient_id,
+        patient_id,
         doctor_id: None,
         record_type: payload.record_type,
         ipfs_cid: payload.ipfs_cid,
