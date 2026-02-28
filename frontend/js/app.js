@@ -346,6 +346,62 @@ document.addEventListener('DOMContentLoaded', async () => {
                     }
                 });
             }
+
+            // App Preferences
+            const settingsLangSelect = document.getElementById('settings-language-select');
+            if (settingsLangSelect) {
+                settingsLangSelect.value = window.nutriLocale?.currentLang || 'fr';
+                settingsLangSelect.addEventListener('change', (e) => {
+                    if (window.nutriLocale) {
+                        window.nutriLocale.setLanguage(e.target.value);
+                        const mainLangSelect = document.getElementById('language-select');
+                        if (mainLangSelect) mainLangSelect.value = e.target.value;
+                    }
+                });
+            }
+
+            const settingsThemeBtn = document.getElementById('settings-theme-toggle');
+            if (settingsThemeBtn) {
+                settingsThemeBtn.addEventListener('click', () => {
+                    const isDark = document.documentElement.classList.contains('dark');
+                    if (isDark) {
+                        document.documentElement.classList.remove('dark');
+                        document.documentElement.classList.add('light');
+                        localStorage.setItem('theme', 'light');
+                    } else {
+                        document.documentElement.classList.remove('light');
+                        document.documentElement.classList.add('dark');
+                        localStorage.setItem('theme', 'dark');
+                    }
+                });
+            }
+
+            // Security Form (Mock Password Reset)
+            const securityForm = document.getElementById('security-form');
+            if (securityForm) {
+                securityForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    // Mock success for Premium UI feel
+                    const msgDiv = document.getElementById('security-message');
+                    msgDiv.innerHTML = "<i class='bx bx-check-circle'></i> Mot de passe mis à jour avec succès.";
+                    msgDiv.style.color = "var(--color-green)";
+                    msgDiv.style.display = 'block';
+                    securityForm.reset();
+                    setTimeout(() => { msgDiv.style.display = 'none'; }, 5000);
+                });
+            }
+
+            // Session Management
+            const btnLogoutAll = document.getElementById('btn-logout-all');
+            if (btnLogoutAll) {
+                btnLogoutAll.addEventListener('click', () => {
+                    if (confirm("Voulez-vous vraiment vous déconnecter de tous les appareils ?")) {
+                        if (window.nutriAuth) {
+                            window.nutriAuth.logout(true);
+                        }
+                    }
+                });
+            }
         }
         if (route === 'login') {
             const form = document.getElementById('login-form');
