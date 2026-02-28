@@ -1,0 +1,10 @@
+# Exclude Rust build artifacts — avoids sending gigabytes of Windows
+# binaries as build context and prevents stale artifacts confusing cargo
+target/
+
+# SQLite databases
+*.db
+
+# Local env files
+.env
+.env.*
