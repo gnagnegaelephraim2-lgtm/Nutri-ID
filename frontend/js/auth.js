@@ -86,6 +86,38 @@ class AuthManager {
         }
     }
 
+    async updateProfile(payload) {
+        if (!this.token) throw new Error("Non authentifié");
+
+        try {
+            const res = await fetch(`${this.baseUrl}/me/update`, {
+                method: 'PUT',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'Authorization': `Bearer ${this.token}`
+                },
+                body: JSON.stringify(payload)
+            });
+            const data = await res.json();
+
+            if (!res.ok) throw new Error(data.error || 'Erreur lors de la mise à jour');
+
+            // Reload user profile in memory to update UI elements like the Health ID card
+            await this.fetchProfile();
+            this.updateSidebar();
+
+            // If the ID view is open and we just updated data, try to refresh it
+            if (window.location.hash === '#health-id' && window.nutriWeb3) {
+                window.nutriWeb3.init();
+            }
+
+            return true;
+        } catch (error) {
+            console.error('Update profile error:', error);
+            throw error;
+        }
+    }
+
     logout(redirect = true) {
         this.token = null;
         this.user = null;

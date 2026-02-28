@@ -29,7 +29,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             "home.btn_id": "Voir mon ID Santé",
             "dashboard.title": "Tableau de bord",
             "dashboard.subtitle": "Aperçu de votre état de santé et assurance.",
-            "dashboard.new_record": "Nouveau Document"
+            "dashboard.new_record": "Nouveau Document",
+            "settings.title": "Paramètres / Mon Profil",
+            "settings.subtitle": "Gérez vos informations personnelles et préférences.",
+            "settings.name_label": "Nom et Prénoms",
+            "settings.nip_label": "NIP (National ID)",
+            "settings.blood_label": "Groupe Sanguin",
+            "settings.save_btn": "Enregistrer les modifications"
         },
         dioula: {
             "nav.home": "Awe kɛnɛya",         /* Welcome/Home approx */
@@ -48,7 +54,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             "home.btn_dashboard": "Taa Kɛnɛya ɲɛ la",
             "home.btn_id": "N ka ID Lafiɛ",
             "dashboard.title": "Kɛnɛya ɲɛ",
-            "dashboard.subtitle": "I ka kɛnɛya ni i ka insurance."
+            "dashboard.subtitle": "I ka kɛnɛya ni i ka insurance.",
+            "settings.title": "Ladilikanw / N ka ɲɛ",
+            "settings.subtitle": "I ka kibaruya ni i b'a fɛ minnu bɛn.",
+            "settings.name_label": "Tɔgɔ ni Jamu",
+            "settings.nip_label": "NIP",
+            "settings.blood_label": "Joli syɛn",
+            "settings.save_btn": "A bila a ɲɔgɔn na"
         },
         baoule: {
             "nav.home": "Awa awlo",
@@ -67,7 +79,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             "home.btn_dashboard": "Wla klo Fɔu cècè nzɛn",
             "home.btn_id": "Nian y'a ID",
             "dashboard.title": "Fɔu cècè",
-            "dashboard.subtitle": "Amoun sran flouwa zran."
+            "dashboard.subtitle": "Amoun sran flouwa zran.",
+            "settings.title": "Aklun / Y'a ndrɛ",
+            "settings.subtitle": "Sran tran wun ndrɛ siesie.",
+            "settings.name_label": "Duman nin bla",
+            "settings.nip_label": "NIP",
+            "settings.blood_label": "Mmoja kpa",
+            "settings.save_btn": "Sie kpa"
         },
         // Bété — spoken by ~2M people in central-western Côte d'Ivoire (Gagnoa region)
         bete: {
@@ -88,7 +106,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             "home.btn_id": "N Nyɔlɔ ID Yɛ",
             "dashboard.title": "Sɔ Yɛ Kpɛ",
             "dashboard.subtitle": "I nyɔlɔ ni i nyɔlɔ tɔnba sɔ.",
-            "dashboard.new_record": "Gba Sɛbɛ Kura"
+            "dashboard.new_record": "Gba Sɛbɛ Kura",
+            "settings.title": "Bɔ kpɛ / N Nyɔlɔ Yɛ",
+            "settings.subtitle": "Bɔ kpɛ nɛ i nyɔlɔ sɔ.",
+            "settings.name_label": "Nyɔlɔ bɔ nyi",
+            "settings.nip_label": "NIP",
+            "settings.blood_label": "Nyima bɔ",
+            "settings.save_btn": "Loku gba"
         },
         // Agni (Anyin) — spoken by ~1M people in eastern Côte d'Ivoire (Aboisso/Agnibilékrou region)
         agni: {
@@ -109,7 +133,13 @@ document.addEventListener('DOMContentLoaded', async () => {
             "home.btn_id": "Ma Apɔlɔ ID",
             "dashboard.title": "Hu Nyina Kpɛ",
             "dashboard.subtitle": "Wo apɔlɔ ni wo assurance.",
-            "dashboard.new_record": "Sɛbɛ Kura Wie"
+            "dashboard.new_record": "Sɛbɛ Kura Wie",
+            "settings.title": "Sa wie / Ma Apɔlɔ",
+            "settings.subtitle": "Ma nyina ni wo sa wie.",
+            "settings.name_label": "Duman",
+            "settings.nip_label": "NIP",
+            "settings.blood_label": "Mmoja",
+            "settings.save_btn": "Sie yie"
         }
         // *Translators note: Bété and Agni dictionaries use phonetically accurate romanized forms.
         //  A certified linguist from CI should validate these before official government deployment.
@@ -253,6 +283,68 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (route === 'records') {
             if (window.nutriRecords) {
                 window.nutriRecords.init();
+            }
+        }
+        if (route === 'settings') {
+            const form = document.getElementById('profile-form');
+            if (form) {
+                // Pre-fill form
+                const user = window.nutriAuth?.user;
+                if (user) {
+                    document.getElementById('prof-name').value = user.full_name || '';
+                    document.getElementById('prof-nip').value = user.national_id || '';
+                    document.getElementById('prof-blood').value = user.blood_type || 'O+';
+                    document.getElementById('prof-dob').value = user.date_of_birth || '';
+                    document.getElementById('prof-sex').value = user.sex || '';
+                    document.getElementById('prof-weight').value = user.weight || '';
+                    document.getElementById('prof-height').value = user.height || '';
+                    document.getElementById('prof-allergies').value = user.allergies || '';
+                    document.getElementById('prof-contact').value = user.emergency_contact || '';
+                }
+
+                form.addEventListener('submit', async (e) => {
+                    e.preventDefault();
+                    const btn = form.querySelector('button[type="submit"]');
+                    const originalText = btn.innerHTML;
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Mise à jour...';
+
+                    const msgDiv = document.getElementById('profile-message');
+                    msgDiv.style.display = 'none';
+
+                    try {
+                        const payload = {
+                            full_name: document.getElementById('prof-name').value,
+                            national_id: document.getElementById('prof-nip').value,
+                            blood_type: document.getElementById('prof-blood').value,
+                            date_of_birth: document.getElementById('prof-dob').value,
+                            sex: document.getElementById('prof-sex').value,
+                            allergies: document.getElementById('prof-allergies').value,
+                            emergency_contact: document.getElementById('prof-contact').value
+                        };
+
+                        // Parse numbers if they exist
+                        const weight = document.getElementById('prof-weight').value;
+                        if (weight) payload.weight = parseFloat(weight);
+
+                        const height = document.getElementById('prof-height').value;
+                        if (height) payload.height = parseFloat(height);
+
+                        await window.nutriAuth.updateProfile(payload);
+
+                        msgDiv.innerHTML = "<i class='bx bx-check-circle text-green'></i> Profil mis à jour avec succès.";
+                        msgDiv.style.color = "var(--color-green)";
+                        msgDiv.style.display = 'block';
+                    } catch (err) {
+                        msgDiv.innerHTML = "<i class='bx bx-error-circle text-orange'></i> Erreur: " + err.message;
+                        msgDiv.style.color = "var(--color-orange)";
+                        msgDiv.style.display = 'block';
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = originalText;
+                        setTimeout(() => { if (msgDiv) msgDiv.style.display = 'none'; }, 5000);
+                    }
+                });
             }
         }
         if (route === 'login') {
