@@ -4,7 +4,6 @@ use axum::{
 };
 use serde::Serialize;
 use std::net::SocketAddr;
-use sqlx::SqlitePool;
 use tower_http::cors::{Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
@@ -43,7 +42,7 @@ async fn main() {
 
     // Initialize Database pool and run migrations
     let pool = db::init_db().await.expect(
-        "Failed to connect to PostgreSQL. Is the database running? Check DATABASE_URL in .env"
+        "Failed to connect to SQLite. Check DATABASE_URL in .env"
     );
     tracing::info!("✅ Database connected and migrations applied.");
 

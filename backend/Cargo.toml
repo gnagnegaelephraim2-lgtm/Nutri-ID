@@ -24,9 +24,11 @@ hex = "0.4"
 getrandom = { version = "0.2", features = ["rdrand"] }
 # Keccak256 for ABI function selector encoding (pure Rust, no C dependencies)
 sha3 = "0.10"
+# secp256k1 ECDSA for Ethereum transaction signing (pure Rust)
+k256 = { version = "0.13", features = ["ecdsa"] }
 # Password hashing
 bcrypt = "0.15"
 # HTTP client for Gemini API calls (server-side, API key never exposed to browser)
-reqwest = { version = "0.11", features = ["json"], default-features = false }
+reqwest = { version = "0.11", features = ["json", "rustls-tls"], default-features = false }
 
 

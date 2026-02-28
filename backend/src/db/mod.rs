@@ -1,8 +1,6 @@
 use sqlx::{SqlitePool, sqlite::SqlitePoolOptions};
 use std::env;
 
-pub type DbPool = SqlitePool;
-
 pub async fn init_db() -> Result<SqlitePool, sqlx::Error> {
     // Default to a local file — no installation needed
     let db_url = env::var("DATABASE_URL")

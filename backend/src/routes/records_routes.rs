@@ -5,6 +5,7 @@ use axum::{
     Json, Router,
 };
 use sqlx::{SqlitePool, Row};
+use crate::auth::Claims;
 use crate::models::record::{HealthRecord, CreateRecordRequest};
 use uuid::Uuid;
 
@@ -13,8 +14,9 @@ pub fn router() -> Router<SqlitePool> {
         .route("/", get(list_records).post(create_record))
 }
 
-/// GET /api/records — returns health records
+/// GET /api/records — returns health records (JWT required)
 async fn list_records(
+    _claims: Claims,
     State(pool): State<SqlitePool>,
 ) -> Result<Json<Vec<HealthRecord>>, (StatusCode, String)> {
     let rows = sqlx::query(
@@ -44,8 +46,9 @@ async fn list_records(
     Ok(Json(records))
 }
 
-/// POST /api/records — creates a new health record
+/// POST /api/records — creates a new health record (JWT required)
 async fn create_record(
+    _claims: Claims,
     State(pool): State<SqlitePool>,
     Json(payload): Json<CreateRecordRequest>,
 ) -> Result<Json<HealthRecord>, (StatusCode, String)> {

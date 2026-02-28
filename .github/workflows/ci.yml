@@ -20,23 +20,8 @@ jobs:
     name: 🦀 Rust Backend CI
     runs-on: ubuntu-latest
 
-    services:
-      postgres:
-        image: postgres:15
-        env:
-          POSTGRES_USER: nutriid_admin
-          POSTGRES_PASSWORD: test_password
-          POSTGRES_DB: nutriid_test_db
-        ports:
-          - 5432:5432
-        options: >-
-          --health-cmd pg_isready
-          --health-interval 10s
-          --health-timeout 5s
-          --health-retries 5
-
     env:
-      DATABASE_URL: postgres://nutriid_admin:test_password@localhost:5432/nutriid_test_db
+      DATABASE_URL: sqlite:./nutriid_test.db?mode=rwc
       JWT_SECRET: test-jwt-secret-ci-only-not-for-production
       POLYGON_RPC_URL: http://127.0.0.1:8545
       RELAYER_PRIVATE_KEY: "0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80"
