@@ -263,6 +263,7 @@ fn derive_address(private_key_hex: &str) -> String {
 
 /// Signs an EIP-155 legacy Ethereum transaction and returns the RLP-encoded
 /// raw transaction hex string (ready for eth_sendRawTransaction).
+#[allow(clippy::too_many_arguments)]
 fn sign_legacy_tx(
     private_key_hex: &str,
     nonce: u64,
