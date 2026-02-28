@@ -32,6 +32,7 @@ Thumbs.db
 
 # Database
 /backend/postgres-data/
+/backend/*.db
 
 # Logs
 logs
