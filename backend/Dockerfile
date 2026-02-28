@@ -1,68 +1,71 @@
 # =============================================================================
 # Stage 1: Builder — Compile the Rust binary in a full Rust environment
 # =============================================================================
-FROM rust:1.76-slim-bookworm AS builder
+FROM rust:stable-slim-bookworm AS builder
 
-# Install build dependencies for openssl and libpq (needed by sqlx + ethers)
+# Build dependencies:
+#   pkg-config      — lets cargo locate system libs
+#   libssl-dev      — needed by ring (reqwest rustls-tls dependency)
+#   libsqlite3-dev  — needed by sqlx sqlite feature
+#   ca-certificates — TLS root certs
 RUN apt-get update && apt-get install -y \
     pkg-config \
     libssl-dev \
-    libpq-dev \
+    libsqlite3-dev \
     ca-certificates \
     && rm -rf /var/lib/apt/lists/*
 
 WORKDIR /usr/src/app
 
-# Copy dependency manifests first (cache optimization: only rebuild on Cargo.toml changes)
+# Copy dependency manifests first (cache layer: only re-downloads crates on Cargo.toml changes)
 COPY Cargo.toml Cargo.lock ./
 
-# Create a dummy main.rs to compile deps first (dramatically speeds up rebuilds)
-RUN mkdir src && echo 'fn main() {}' > src/main.rs
+# Stub out both compilation units so cargo can pre-compile all external deps
+RUN mkdir src \
+    && echo 'fn main() {}' > src/main.rs \
+    && echo '' > src/lib.rs
 RUN cargo build --release 2>/dev/null || true
-RUN rm -f src/main.rs
+RUN rm -f src/main.rs src/lib.rs
 
-# Now copy the real source code and compile the production binary
+# Copy the real source and migrations, then build the final binary
 COPY src ./src
 COPY migrations ./migrations
 
-# Force Cargo to recompile (touch the source to invalidate cache)
-RUN touch src/main.rs && cargo build --release
+# Touch source roots to ensure cargo re-links after the stub build
+RUN touch src/main.rs src/lib.rs && cargo build --release
 
 # =============================================================================
-# Stage 2: Runtime — Minimal Alpine image, no compiler, no build tools
+# Stage 2: Runtime — Minimal Debian image, no compiler, no build tools
 # =============================================================================
 FROM debian:bookworm-slim AS runtime
 
-# Install only what's needed at runtime
+# Runtime dependencies:
+#   libssl3       — runtime TLS (ring/rustls)
+#   libsqlite3-0  — SQLite shared library
+#   ca-certificates — TLS root certs for outbound HTTPS (Gemini API, Polygon RPC)
+#   curl          — used by HEALTHCHECK
 RUN apt-get update && apt-get install -y \
     libssl3 \
-    libpq5 \
+    libsqlite3-0 \
     ca-certificates \
+    curl \
     && rm -rf /var/lib/apt/lists/*
 
-# Create a non-root user for security (never run as root in production)
+# Run as non-root for security
 RUN groupadd -r nutriid && useradd -r -g nutriid nutriid
 
 WORKDIR /app
 
-# Copy the compiled binary from the builder stage
 COPY --from=builder /usr/src/app/target/release/nutriid-backend /app/nutriid-backend
-
-# Copy migrations if the app auto-runs them on startup
 COPY --from=builder /usr/src/app/migrations /app/migrations
 
-# Ensure the non-root user owns the working directory
 RUN chown -R nutriid:nutriid /app
 
-# Switch to the non-root user
 USER nutriid
 
-# Expose the Axum API port
 EXPOSE 3000
 
-# Health check for Docker orchestration
 HEALTHCHECK --interval=30s --timeout=10s --start-period=15s --retries=3 \
     CMD curl -f http://localhost:3000/api/health || exit 1
 
-# Start the server
 CMD ["/app/nutriid-backend"]
