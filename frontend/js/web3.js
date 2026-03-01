@@ -149,22 +149,33 @@ class Web3Manager {
         const verEl = document.getElementById("sbt-verification");
         const set = (id, val) => { const el = document.getElementById(id); if (el) el.textContent = val; };
 
-        // Attempt to load basic info from logged-in user (AuthManager) first
+        // Populate card from user profile (works in all modes — online, demo, offline)
         if (window.nutriAuth && window.nutriAuth.user) {
             const user = window.nutriAuth.user;
             const name = user.full_name || user.email.split('@')[0];
             const initials = name.substring(0, 2).toUpperCase();
 
             set("hid-name", name.toUpperCase());
-            // Blood type might be available in user profile even if not on blockchain yet
             if (user.blood_type) set("hid-blood-type", user.blood_type);
+            if (user.sex) set("hid-sex", user.sex);
+            if (user.national_id) set("hid-nip", user.national_id);
+            if (user.date_of_birth) {
+                // Convert ISO "1988-05-14" → "14/05/1988"
+                const parts = user.date_of_birth.split("-");
+                set("hid-dob", parts.length === 3
+                    ? `${parts[2]}/${parts[1]}/${parts[0]}`
+                    : user.date_of_birth);
+            }
 
             const photoEl = document.getElementById("hid-photo");
-            if (photoEl) photoEl.src = `https://ui-avatars.com/api/?name=${initials}&size=120&background=ccc`;
+            if (photoEl) photoEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(initials)}&size=120&background=2d2d2d&color=fff`;
+
+            // Generate QR code from profile data — works in all modes
+            this._generateQR(user.national_id || user.email, name, user.blood_type || "—");
         }
 
         if (!this.addresses) {
-            // Demo / offline mode — leave static HTML as-is
+            // Demo / offline mode
             if (verEl) verEl.innerHTML = `<span class="badge-demo"><i class='bx bx-info-circle'></i> Mode Démo — déployez les contrats pour activer</span>`;
             return;
         }
@@ -221,6 +232,22 @@ class Web3Manager {
         // Color the CMU status
         const cmuEl = document.getElementById("hid-cmu-status");
         if (cmuEl) cmuEl.style.color = hasCMU ? "#009A44" : "#EF4444";
+    }
+
+    /** Generates a QR code inside #qr-container using profile data */
+    _generateQR(nip, name, bloodType) {
+        const container = document.getElementById("qr-container");
+        if (!container || !window.QRCode) return;
+        container.innerHTML = ""; // clear the placeholder icon
+        const qrText = `NUTRI-ID\nNIP:${nip}\n${name.toUpperCase()}\nGS:${bloodType}`;
+        new window.QRCode(container, {
+            text: qrText,
+            width: 80,
+            height: 80,
+            colorDark: "#000000",
+            colorLight: "#ffffff",
+            correctLevel: window.QRCode.CorrectLevel.M,
+        });
     }
 
     _showError(message, nearElementId) {
