@@ -54,6 +54,8 @@
                         data-i18n="nav.teleconsult">Téléconsultation</span></a></li>
             <li><a href="#cmu" data-route="cmu"><i class='bx bxs-check-shield'></i> <span data-i18n="nav.cmu">Couverture
                         CMU</span></a></li>
+            <li><a href="#fasting" data-route="fasting"><i class='bx bx-calendar-star'></i> <span
+                        data-i18n="nav.fasting">Jeûne & Spiritualité</span></a></li>
             <li><a href="#settings" data-route="settings"><i class='bx bxs-cog'></i> <span
                         data-i18n="nav.settings">Paramètres</span></a></li>
         </ul>
@@ -353,8 +355,7 @@
                         <label class="text-sm">Adresse Portefeuille Polygon (0x…)</label>
                         <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
                             <input type="text" id="mint-wallet-addr" class="search-bar"
-                                style="flex:1;font-family:monospace;font-size:0.85rem;"
-                                placeholder="0x...">
+                                style="flex:1;font-family:monospace;font-size:0.85rem;" placeholder="0x...">
                             <button id="mint-use-metamask-btn" class="btn btn-secondary btn-sm"
                                 title="Utiliser l'adresse MetaMask connectée">
                                 <i class='bx bxl-metamask'></i>
@@ -369,7 +370,8 @@
                             <i class='bxl-polygon'></i> Minter mon ID Santé SBT
                         </button>
                     </div>
-                    <div id="mint-result" class="mt-3 text-sm" style="display:none;padding:0.75rem;border-radius:8px;background:rgba(0,0,0,0.15);"></div>
+                    <div id="mint-result" class="mt-3 text-sm"
+                        style="display:none;padding:0.75rem;border-radius:8px;background:rgba(0,0,0,0.15);"></div>
                 </div>
             </div>
 
@@ -429,7 +431,7 @@
                         </div>
                     </div>
                     <div class="card-bottom">
-                        <div class="qr-code-placeholder">
+                        <div class="qr-code-placeholder" id="qr-container">
                             <i class='bx bx-qr'></i>
                         </div>
                         <div class="blockchain-verify">
@@ -513,8 +515,7 @@
                     </div>
                     <div class="card-body">
                         <div class="text-center mb-3">
-                            <h2 id="today-calories" class="text-orange"
-                                style="font-size:2.5rem;font-weight:700;">—</h2>
+                            <h2 id="today-calories" class="text-orange" style="font-size:2.5rem;font-weight:700;">—</h2>
                             <p class="text-muted text-sm">kcal aujourd'hui</p>
                         </div>
                         <div class="nutri-bars">
@@ -562,8 +563,7 @@
                         <div id="meal-logs-loading" class="text-center text-muted" style="display:none;padding:1rem 0;">
                             <i class='bx bx-loader-alt bx-spin' style="font-size:1.5rem;"></i>
                         </div>
-                        <div id="meal-logs-empty"
-                            class="text-center text-muted" style="display:none;padding:1.5rem 0;">
+                        <div id="meal-logs-empty" class="text-center text-muted" style="display:none;padding:1.5rem 0;">
                             <i class='bx bxs-bowl-hot' style="font-size:2.5rem;"></i>
                             <p class="mt-1 text-sm">Aucun repas enregistré. Commencez par logger un repas !</p>
                         </div>
@@ -586,6 +586,92 @@
                                 placeholder="Ex: Que penses-tu du Foutou ?">
                             <button id="ai-send" class="btn btn-primary"><i class='bx bx-send'></i></button>
                         </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </template>
+
+    <!-- FASTING TEMPLATE -->
+    <template id="tpl-fasting">
+        <div class="page fasting-page animate-fade-in">
+            <div class="page-header">
+                <h2><i class='bx bx-calendar-star text-orange'></i> Jeûne & Spiritualité</h2>
+                <p class="text-muted">Suivi de vos jours de jeûne (Carême, Ramadan, Intermittent).</p>
+            </div>
+
+            <!-- Active Fast Strip -->
+            <div class="card glass mb-4" id="fasting-active-card" style="border-left: 4px solid var(--color-orange);">
+                <div class="card-body"
+                    style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; gap:1rem;">
+                    <div>
+                        <h3 id="fast-current-title" style="margin-bottom:0.2rem;"><i
+                                class='bx bx-loader-alt bx-spin'></i> Chargement...</h3>
+                        <p id="fast-current-dates" class="text-sm text-muted">Vérification de votre plan actif...</p>
+                    </div>
+                    <div style="text-align:right;">
+                        <h2 id="fast-completed-days" style="color:var(--color-green); margin-bottom:0;">0</h2>
+                        <span class="text-sm text-muted">Jours Complétés</span>
+                    </div>
+                </div>
+            </div>
+
+            <div class="grid-layout">
+                <!-- Create Plan Form -->
+                <div class="card glass span-1" id="fasting-create-zone" style="display:none;">
+                    <div class="card-header">
+                        <h3><i class='bx bx-bookmark-plus text-green'></i> Nouveau Plan</h3>
+                    </div>
+                    <div class="card-body">
+                        <form id="fasting-create-form">
+                            <div class="form-group mb-3">
+                                <label class="text-sm">Tradition / Type de Jeûne</label>
+                                <select id="fast-type-select" class="search-bar"
+                                    style="width:100%;margin-top:0.5rem;background:var(--bg-color);">
+                                    <option value="lent">Carême (Chrétien) - 40 Jours</option>
+                                    <option value="ramadan">Ramadan (Musulman) - 30 Jours</option>
+                                    <option value="daniel">Jeûne de Daniel (Fruits/Légumes)</option>
+                                    <option value="intermittent">Jeûne Intermittent (Santé)</option>
+                                    <option value="custom">Personnalisé</option>
+                                </select>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="text-sm">Date de début</label>
+                                <input type="date" id="fast-start-date" class="search-bar"
+                                    style="width:100%;margin-top:0.5rem;" required>
+                            </div>
+                            <div class="form-group mb-3">
+                                <label class="text-sm">Date de fin (Optionnel)</label>
+                                <input type="date" id="fast-end-date" class="search-bar"
+                                    style="width:100%;margin-top:0.5rem;">
+                            </div>
+                            <button type="submit" class="btn btn-primary w-full" id="fast-submit-btn">
+                                <i class='bx bx-check'></i> Démarrer mon Jeûne
+                            </button>
+                        </form>
+                    </div>
+                </div>
+
+                <!-- Calendar Grid -->
+                <div class="card glass span-2" id="fasting-calendar-zone" style="display:none;">
+                    <div class="card-header" style="display:flex; justify-content:space-between; align-items:center;">
+                        <h3>Calendrier d'Engagement</h3>
+                        <button id="fast-abort-btn" class="btn btn-secondary btn-sm"
+                            style="color:#ef4444; border-color:#ef4444;"><i class='bx bx-x'></i> Arrêter</button>
+                    </div>
+                    <div class="card-body pb-3">
+                        <p class="text-sm text-muted mb-3">Cliquez sur un jour pour valider votre jeûne. <br><span
+                                style="color:var(--color-green);">■</span> Réussi &nbsp;&nbsp; <span
+                                style="color:#ef4444;">■</span> Manqué</p>
+
+                        <!-- Dynamic Calendar rendering -->
+                        <div id="fasting-calendar-grid"
+                            style="display:grid; grid-template-columns: repeat(auto-fill, minmax(40px, 1fr)); gap:8px;">
+                            <!-- Injected by JS -->
+                        </div>
+
+                        <div id="fast-log-msg" class="text-sm text-center mt-3"
+                            style="display:none; padding:10px; border-radius:8px;"></div>
                     </div>
                 </div>
             </div>
@@ -674,7 +760,8 @@
                     <h4><i class='bx bx-shield-quarter text-green'></i> Sécurité &amp; Confidentialité</h4>
                     <p class="text-sm text-muted mt-1">Chaque dossier est chiffré AES-256-GCM avec votre NIP, haché
                         SHA-256, et son CID IPFS est indexé dans votre profil. Configurez Pinata dans les
-                        <strong>Paramètres</strong> pour activer le stockage IPFS décentralisé.</p>
+                        <strong>Paramètres</strong> pour activer le stockage IPFS décentralisé.
+                    </p>
                     <div class="id-row mt-2">
                         <div><i class='bx bx-lock-alt text-orange'></i> <span class="text-sm">Chiffrement E2E</span>
                         </div>
@@ -920,8 +1007,8 @@
                             <div class="form-group mb-2">
                                 <label class="text-sm">Nom du vaccin</label>
                                 <input type="text" id="vax-name" class="search-bar"
-                                    style="width:100%;margin-top:0.5rem;"
-                                    placeholder="Ex: Fièvre jaune, Méningite, BCG" required>
+                                    style="width:100%;margin-top:0.5rem;" placeholder="Ex: Fièvre jaune, Méningite, BCG"
+                                    required>
                             </div>
                             <div class="id-row mt-2 mb-2">
                                 <div>
@@ -943,8 +1030,7 @@
                             <div class="form-group mb-2">
                                 <label class="text-sm">Centre de santé</label>
                                 <input type="text" id="vax-location" class="search-bar"
-                                    style="width:100%;margin-top:0.5rem;"
-                                    placeholder="Ex: CHU de Treichville">
+                                    style="width:100%;margin-top:0.5rem;" placeholder="Ex: CHU de Treichville">
                             </div>
                             <div class="form-group mb-3">
                                 <label class="text-sm">Prochain rappel (optionnel)</label>
@@ -1013,12 +1099,14 @@
                             <div class="card glass" style="padding:1rem;">
                                 <i class='bx bx-plus-medical text-green' style="font-size:1.8rem;"></i>
                                 <h4 class="mt-1">Consultations</h4>
-                                <p class="text-sm text-muted">Médecine générale et spécialisée dans les centres affiliés CMU.</p>
+                                <p class="text-sm text-muted">Médecine générale et spécialisée dans les centres affiliés
+                                    CMU.</p>
                             </div>
                             <div class="card glass" style="padding:1rem;">
                                 <i class='bx bx-capsule text-orange' style="font-size:1.8rem;"></i>
                                 <h4 class="mt-1">Médicaments</h4>
-                                <p class="text-sm text-muted">Remboursement partiel sur la liste nationale des médicaments essentiels.</p>
+                                <p class="text-sm text-muted">Remboursement partiel sur la liste nationale des
+                                    médicaments essentiels.</p>
                             </div>
                             <div class="card glass" style="padding:1rem;">
                                 <i class='bx bx-test-tube text-green' style="font-size:1.8rem;"></i>
@@ -1033,22 +1121,27 @@
                             <div class="card glass" style="padding:1rem;">
                                 <i class='bx bxs-shield-plus text-green' style="font-size:1.8rem;"></i>
                                 <h4 class="mt-1">Vaccinations</h4>
-                                <p class="text-sm text-muted">Programme élargi de vaccination (PEV) et vaccins recommandés.</p>
+                                <p class="text-sm text-muted">Programme élargi de vaccination (PEV) et vaccins
+                                    recommandés.</p>
                             </div>
                             <div class="card glass" style="padding:1rem;">
                                 <i class='bx bx-bed text-orange' style="font-size:1.8rem;"></i>
                                 <h4 class="mt-1">Hospitalisation</h4>
-                                <p class="text-sm text-muted">Prise en charge partielle des frais d'hospitalisation d'urgence.</p>
+                                <p class="text-sm text-muted">Prise en charge partielle des frais d'hospitalisation
+                                    d'urgence.</p>
                             </div>
                         </div>
                     </div>
                 </div>
 
                 <!-- Info footer -->
-                <div class="card glass span-3" style="background:rgba(0,154,68,0.08);border:1px solid rgba(0,154,68,0.3);">
+                <div class="card glass span-3"
+                    style="background:rgba(0,154,68,0.08);border:1px solid rgba(0,154,68,0.3);">
                     <div class="card-body" style="display:flex;align-items:center;gap:1rem;">
                         <i class='bx bx-info-circle text-green' style="font-size:2rem;flex-shrink:0;"></i>
-                        <p class="text-sm text-muted">La CMU est gérée par la <strong>Caisse Nationale d'Assurance Maladie (CNAM-CI)</strong>. Pour toute question, contactez le <strong>0800 888 99</strong> (numéro gratuit) ou rendez-vous dans un centre CNAM agréé.</p>
+                        <p class="text-sm text-muted">La CMU est gérée par la <strong>Caisse Nationale d'Assurance
+                                Maladie (CNAM-CI)</strong>. Pour toute question, contactez le <strong>0800 888
+                                99</strong> (numéro gratuit) ou rendez-vous dans un centre CNAM agréé.</p>
                     </div>
                 </div>
             </div>
@@ -1110,6 +1203,7 @@
         </div>
     </template>
 
+    <script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
     <script src="js/auth.js"></script>
     <script src="js/web3.js"></script>
     <script src="js/ai.js"></script>

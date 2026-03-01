@@ -292,6 +292,9 @@ document.addEventListener('DOMContentLoaded', async () => {
         if (route === 'cmu') {
             initCmu();
         }
+        if (route === 'fasting') {
+            initFasting();
+        }
         if (route === 'records') {
             initRecords();
         }
@@ -532,24 +535,59 @@ document.addEventListener('DOMContentLoaded', async () => {
         chart.update();
     }
 
-    function initDashboardCharts() {
+    async function initDashboardCharts() {
         const canvas = document.getElementById('healthChart');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const c = getChartColors();
+        const token = window.nutriAuth?.token;
+
+        // Build last-7-days labels and zero-filled map
+        const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
+        const days = [], dayLabels = [], dayMap = {};
+        for (let i = 6; i >= 0; i--) {
+            const d = new Date();
+            d.setDate(d.getDate() - i);
+            const key = d.toISOString().slice(0, 10);
+            days.push(key);
+            dayLabels.push(DAY_NAMES[d.getDay()]);
+            dayMap[key] = 0;
+        }
+
+        // Aggregate real daily kcal from /api/nutrition
+        try {
+            if (token) {
+                const res = await fetch('http://localhost:3000/api/nutrition', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const logs = await res.json();
+                    logs.forEach(log => {
+                        const day = log.logged_at ? log.logged_at.slice(0, 10) : null;
+                        if (day && Object.prototype.hasOwnProperty.call(dayMap, day)) {
+                            dayMap[day] += log.calories || 0;
+                        }
+                    });
+                }
+            }
+        } catch (_) { /* fall through with zeros */ }
+
+        const data = days.map(d => Math.round(dayMap[d]));
 
         window.healthChartInst = new Chart(ctx, {
             type: 'line',
             data: {
-                labels: ['Jan', 'Fév', 'Mar', 'Avr', 'Mai', 'Juin'],
+                labels: dayLabels,
                 datasets: [{
-                    label: 'Indice Santé Global',
-                    data: [65, 70, 68, 80, 85, 92],
-                    borderColor: '#009A44', /* Ivorian Green */
+                    label: 'Calories par jour (kcal)',
+                    data,
+                    borderColor: '#009A44',
                     backgroundColor: 'rgba(0, 154, 68, 0.1)',
                     borderWidth: 3,
                     tension: 0.4,
-                    fill: true
+                    fill: true,
+                    pointRadius: 4,
+                    pointBackgroundColor: '#009A44',
                 }]
             },
             options: {
@@ -559,13 +597,10 @@ document.addEventListener('DOMContentLoaded', async () => {
                     legend: { labels: { color: c.text } }
                 },
                 scales: {
-                    x: {
-                        grid: { color: c.grid },
-                        ticks: { color: c.text }
-                    },
+                    x: { grid: { color: c.grid }, ticks: { color: c.text } },
                     y: {
-                        grid: { color: c.grid },
-                        ticks: { color: c.text }
+                        grid: { color: c.grid }, ticks: { color: c.text },
+                        beginAtZero: true, suggestedMax: 2500
                     }
                 }
             }
@@ -719,19 +754,62 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
     }
 
-    function initNutritionCharts() {
+    async function initNutritionCharts() {
         const canvas = document.getElementById('nutritionMap');
         if (!canvas) return;
         const ctx = canvas.getContext('2d');
         const c = getChartColors();
+        const token = window.nutriAuth?.token;
+
+        // Build cutoff date string (7 days ago)
+        const cutoff = new Date();
+        cutoff.setDate(cutoff.getDate() - 7);
+        const cutoffStr = cutoff.toISOString().slice(0, 10);
+
+        // Weekly reference targets (WHO-ish: 50g P / 260g C / 70g F / 2000 kcal / 3 meals per day)
+        const WEEKLY = { proteins: 350, carbs: 1820, fats: 490, kcal: 14000, meals: 21, variety: 7 };
+
+        let totP = 0, totC = 0, totF = 0, totKcal = 0, mealCount = 0;
+        const mealNames = new Set();
+
+        try {
+            if (token) {
+                const res = await fetch('http://localhost:3000/api/nutrition', {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (res.ok) {
+                    const logs = await res.json();
+                    logs.forEach(log => {
+                        const day = log.logged_at ? log.logged_at.slice(0, 10) : null;
+                        if (!day || day < cutoffStr) return; // only last 7 days
+                        totP += log.proteins || 0;
+                        totC += log.carbs || 0;
+                        totF += log.fats || 0;
+                        totKcal += log.calories || 0;
+                        mealCount++;
+                        if (log.meal_name) mealNames.add(log.meal_name.toLowerCase());
+                    });
+                }
+            }
+        } catch (_) { /* fall through with zeros */ }
+
+        const pct = (val, max) => Math.min(100, Math.round((val / max) * 100));
+        const data = [
+            pct(totP, WEEKLY.proteins),
+            pct(totC, WEEKLY.carbs),
+            pct(totF, WEEKLY.fats),
+            pct(totKcal, WEEKLY.kcal),
+            pct(mealCount, WEEKLY.meals),
+            pct(mealNames.size, WEEKLY.variety),
+        ];
 
         window.nutriChartInst = new Chart(ctx, {
             type: 'radar',
             data: {
-                labels: ['Protéines', 'Glucides', 'Lipides', 'Vitamine C', 'Fer', 'Calcium'],
+                labels: ['Protéines', 'Glucides', 'Lipides', 'Énergie', 'Repas/sem', 'Variété'],
                 datasets: [{
-                    label: 'Apport Moyen Hebdomadaire',
-                    data: [80, 95, 60, 45, 70, 50],
+                    label: 'Apport Hebdomadaire (%)',
+                    data,
                     backgroundColor: 'rgba(247, 127, 0, 0.4)', /* Ivorian Orange */
                     borderColor: '#F77F00',
                     pointBackgroundColor: '#F77F00',
@@ -746,11 +824,18 @@ document.addEventListener('DOMContentLoaded', async () => {
                         angleLines: { color: c.grid },
                         grid: { color: c.grid },
                         pointLabels: { color: c.text, font: { size: 13 } },
-                        ticks: { display: false }
+                        ticks: { display: false },
+                        min: 0,
+                        max: 100,
                     }
                 },
                 plugins: {
-                    legend: { display: false }
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.raw}% de l'objectif`
+                        }
+                    }
                 }
             }
         });
@@ -879,8 +964,8 @@ document.addEventListener('DOMContentLoaded', async () => {
 
                 data.forEach(tc => {
                     const row = document.createElement('div');
-                    row.className = 'appointment-item mt-2 dash-hover';
-                    row.style.cssText = 'display:flex; padding:0.8rem; background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; align-items:center; gap:1rem; cursor:pointer;';
+                    row.className = 'appointment-item mt-2';
+                    row.style.cssText = 'display:flex; padding:0.8rem; background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; align-items:flex-start; gap:1rem;';
 
                     const dt = new Date(tc.scheduled_at);
                     const day = dt.getDate();
@@ -895,8 +980,13 @@ document.addEventListener('DOMContentLoaded', async () => {
                         case 'canceled': statusBadge = `<span style="background:#e53e3e;color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Annulé</span>`; break;
                     }
 
+                    const canCancel = tc.status === 'pending' || tc.status === 'confirmed';
+                    const cancelBtnHtml = canCancel
+                        ? `<button class="tc-cancel-btn" style="margin-top:0.5rem;padding:3px 10px;background:transparent;border:1px solid #e53e3e;color:#e53e3e;border-radius:6px;font-size:0.75rem;cursor:pointer;"><i class='bx bx-x'></i> Annuler</button>`
+                        : '';
+
                     row.innerHTML = `
-                        <div style="background:var(--color-orange);color:white;padding:0.5rem;border-radius:8px;text-align:center;min-width:50px;">
+                        <div style="background:var(--color-orange);color:white;padding:0.5rem;border-radius:8px;text-align:center;min-width:50px;flex-shrink:0;">
                             <div style="font-size:1.2rem;font-weight:bold;line-height:1;">${day}</div>
                             <div style="font-size:0.8rem;text-transform:uppercase;">${mnth}</div>
                         </div>
@@ -909,8 +999,44 @@ document.addEventListener('DOMContentLoaded', async () => {
                                 <i class='bx bx-time-five'></i> ${time}
                                 <p class="mt-1" style="font-style:italic;">${tc.notes || 'Aucun motif renseigné'}</p>
                             </div>
+                            ${cancelBtnHtml}
                         </div>
                     `;
+
+                    if (canCancel) {
+                        row.querySelector('.tc-cancel-btn').addEventListener('click', async (e) => {
+                            e.stopPropagation();
+                            if (!confirm('Êtes-vous sûr de vouloir annuler cette consultation ?')) return;
+                            const btn = e.currentTarget;
+                            btn.disabled = true;
+                            btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i>";
+                            try {
+                                const res = await fetch(`${API}/${tc.id}/status`, {
+                                    method: 'PUT',
+                                    headers: {
+                                        'Content-Type': 'application/json',
+                                        'Authorization': `Bearer ${token}`
+                                    },
+                                    body: JSON.stringify({ status: 'canceled' })
+                                });
+                                if (!res.ok) {
+                                    const errData = await res.json();
+                                    throw new Error(errData.error || 'Erreur API');
+                                }
+                                await loadConsults();
+                            } catch (err) {
+                                btn.disabled = false;
+                                btn.innerHTML = "<i class='bx bx-x'></i> Annuler";
+                                if (msg) {
+                                    msg.innerHTML = `<i class='bx bx-error-circle'></i> ${err.message}`;
+                                    msg.style.color = '#ef4444';
+                                    msg.style.display = 'block';
+                                    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+                                }
+                            }
+                        });
+                    }
+
                     listEl.appendChild(row);
                 });
             } catch (err) {
@@ -1327,6 +1453,182 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             });
         }
+    }
+
+    async function initFasting() {
+        const API = 'http://localhost:3000/api/fasting';
+        const token = window.nutriAuth?.token;
+        if (!token) return;
+
+        const activeCard = document.getElementById('fasting-active-card');
+        const createZone = document.getElementById('fasting-create-zone');
+        const calZone = document.getElementById('fasting-calendar-zone');
+
+        let activePlan = null;
+
+        async function fetchActivePlan() {
+            try {
+                const res = await fetch(`${API}/plans`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                if (!res.ok) throw new Error("Erreur serveur");
+                const plans = await res.json();
+
+                // Get the latest active plan
+                activePlan = plans.find(p => p.status === 'active');
+
+                if (activePlan) {
+                    createZone.style.display = 'none';
+                    calZone.style.display = 'block';
+                    document.getElementById('fast-current-title').innerHTML = `Jeûne En Cours : <strong>${activePlan.fast_type.toUpperCase()}</strong>`;
+                    document.getElementById('fast-current-dates').innerText = `Depuis le ${new Date(activePlan.start_date).toLocaleDateString()} ${activePlan.end_date ? 'jusqu\'au ' + new Date(activePlan.end_date).toLocaleDateString() : ''}`;
+                    await renderCalendar(activePlan.id, activePlan.start_date, activePlan.end_date);
+                } else {
+                    document.getElementById('fast-current-title').innerHTML = `Aucun plan de jeûne actif`;
+                    document.getElementById('fast-current-dates').innerText = `Sélectionnez une tradition ci-dessous pour commencer.`;
+                    createZone.style.display = 'block';
+                    calZone.style.display = 'none';
+                }
+            } catch (e) {
+                console.error("Failed to load fasting plans", e);
+            }
+        }
+
+        async function renderCalendar(planId, startDateStr, endDateStr) {
+            const grid = document.getElementById('fasting-calendar-grid');
+            if (!grid) return;
+            grid.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Chargement du calendrier...';
+
+            try {
+                const res = await fetch(`${API}/plans/${planId}/logs`, {
+                    headers: { 'Authorization': `Bearer ${token}` }
+                });
+                const logs = await res.json();
+
+                // Calculate days to display (max 40 or the diff between start and end)
+                let totalDays = 30; // default
+                const start = new Date(startDateStr);
+
+                if (endDateStr) {
+                    const end = new Date(endDateStr);
+                    totalDays = Math.round((end - start) / (1000 * 60 * 60 * 24)) + 1;
+                } else if (activePlan.fast_type === 'lent') {
+                    totalDays = 40;
+                }
+
+                if (totalDays > 60) totalDays = 60; // Cap to avoid huge grids
+
+                grid.innerHTML = '';
+                let successCount = 0;
+
+                const logMap = {};
+                logs.forEach(l => logMap[l.date] = l);
+
+                for (let i = 0; i < totalDays; i++) {
+                    const currentDay = new Date(start);
+                    currentDay.setDate(start.getDate() + i);
+                    const dateStr = currentDay.toISOString().slice(0, 10);
+
+                    const cellBtn = document.createElement('button');
+                    cellBtn.className = 'btn btn-secondary btn-sm';
+                    cellBtn.style.padding = '0';
+                    cellBtn.style.height = '40px';
+                    cellBtn.style.display = 'flex';
+                    cellBtn.style.flexDirection = 'column';
+                    cellBtn.style.alignItems = 'center';
+                    cellBtn.style.justifyContent = 'center';
+                    cellBtn.innerHTML = `<span>${i + 1}</span>`;
+
+                    const existingLog = logMap[dateStr];
+                    if (existingLog) {
+                        if (existingLog.status === 'success') {
+                            cellBtn.style.backgroundColor = 'rgba(0,154,68,0.2)';
+                            cellBtn.style.borderColor = 'var(--color-green)';
+                            cellBtn.style.color = 'var(--color-green)';
+                            successCount++;
+                        } else if (existingLog.status === 'skipped') {
+                            cellBtn.style.backgroundColor = 'rgba(239, 68, 68, 0.2)';
+                            cellBtn.style.borderColor = '#ef4444';
+                            cellBtn.style.color = '#ef4444';
+                            cellBtn.style.textDecoration = 'line-through';
+                        }
+                    }
+
+                    // Click to cycle state: empty -> success -> skipped -> empty (delete conceptually but handled via status update)
+                    cellBtn.onclick = async () => {
+                        let nextStatus = 'success';
+                        if (existingLog && existingLog.status === 'success') nextStatus = 'skipped';
+                        else if (existingLog && existingLog.status === 'skipped') nextStatus = 'success'; // simplistic toggle for demo
+
+                        cellBtn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i>';
+                        try {
+                            const postRes = await fetch(`${API}/plans/${planId}/logs`, {
+                                method: 'POST',
+                                headers: {
+                                    'Content-Type': 'application/json',
+                                    'Authorization': `Bearer ${token}`
+                                },
+                                body: JSON.stringify({
+                                    date: dateStr,
+                                    status: nextStatus,
+                                    notes: null
+                                })
+                            });
+                            if (postRes.ok) {
+                                await fetchActivePlan(); // re-render the whole block to update counts
+                            }
+                        } catch (e) {
+                            console.error("Log error", e);
+                        }
+                    };
+
+                    grid.appendChild(cellBtn);
+                }
+
+                document.getElementById('fast-completed-days').innerText = successCount;
+
+            } catch (e) {
+                grid.innerHTML = '<div class="text-sm text-orange">Erreur de chargement.</div>';
+            }
+        }
+
+        // Form Submission
+        const form = document.getElementById('fasting-create-form');
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('fast-submit-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Création...';
+
+                try {
+                    const res = await fetch(`${API}/plans`, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({
+                            fast_type: document.getElementById('fast-type-select').value,
+                            title: null,
+                            start_date: document.getElementById('fast-start-date').value,
+                            end_date: document.getElementById('fast-end-date').value || null
+                        })
+                    });
+                    if (res.ok) {
+                        form.reset();
+                        await fetchActivePlan();
+                    }
+                } catch (e) {
+                    console.error(e);
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "<i class='bx bx-check'></i> Démarrer mon Jeûne";
+                }
+            });
+        }
+
+        await fetchActivePlan();
     }
 
 });

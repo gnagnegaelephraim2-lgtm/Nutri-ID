@@ -6,6 +6,7 @@ pub mod nutrition_routes;
 pub mod records_routes;
 pub mod teleconsult_routes;
 pub mod vaccines_routes;
+pub mod fasting_routes;
 
 use axum::{routing::get, Json, Router};
 use serde_json::json;
@@ -21,6 +22,7 @@ pub fn app_router() -> Router<SqlitePool> {
         .nest("/api/nutrition", nutrition_routes::router())
         .nest("/api/vaccines", vaccines_routes::router())
         .nest("/api/teleconsults", teleconsult_routes::router())
+        .nest("/api/fasting", fasting_routes::router())
 }
 
 
