@@ -1,0 +1,93 @@
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Outfit:wght@400;600;700;800&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    --background: 222 47% 11%;
+    --foreground: 213 31% 91%;
+
+    --card: 222 47% 11%;
+    --card-foreground: 213 31% 91%;
+
+    --popover: 222 47% 11%;
+    --popover-foreground: 213 31% 91%;
+
+    --primary: 30 94% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 222 47% 15%;
+    --secondary-foreground: 213 31% 91%;
+
+    --muted: 223 47% 20%;
+    --muted-foreground: 215 20% 65%;
+
+    --accent: 162 100% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 216 34% 17%;
+    --input: 216 34% 17%;
+    --ring: 30 94% 49%;
+
+    --radius: 0.75rem;
+  }
+
+  * {
+    @apply border-border;
+  }
+
+  body {
+    @apply bg-ci-dark text-foreground font-sans antialiased;
+    background-image:
+      radial-gradient(ellipse at top left, rgba(247, 127, 0, 0.05) 0%, transparent 50%),
+      radial-gradient(ellipse at bottom right, rgba(0, 154, 68, 0.05) 0%, transparent 50%);
+  }
+
+  html {
+    scroll-behavior: smooth;
+  }
+
+  ::-webkit-scrollbar {
+    width: 5px;
+    height: 5px;
+  }
+
+  ::-webkit-scrollbar-track {
+    @apply bg-transparent;
+  }
+
+  ::-webkit-scrollbar-thumb {
+    @apply bg-white/10 rounded-full;
+  }
+
+  ::-webkit-scrollbar-thumb:hover {
+    @apply bg-white/20;
+  }
+}
+
+@layer components {
+  .glass {
+    @apply bg-white/5 backdrop-blur-md border border-white/10;
+  }
+
+  .glass-light {
+    @apply bg-white/80 backdrop-blur-md border border-black/10;
+  }
+
+  .glow-1 {
+    @apply absolute top-0 left-1/4 w-96 h-96 bg-ci-orange/20 rounded-full blur-3xl -z-10;
+  }
+
+  .glow-2 {
+    @apply absolute bottom-1/4 right-0 w-80 h-80 bg-ci-green/15 rounded-full blur-3xl -z-10;
+  }
+
+  .card-glass {
+    @apply glass rounded-2xl p-6;
+  }
+}

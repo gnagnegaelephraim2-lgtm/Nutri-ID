@@ -40,6 +40,7 @@ pub struct UserProfile {
     emergency_contact: Option<String>,
     cmu_active: Option<bool>,
     cmu_expiry_date: Option<String>,
+    religion: Option<String>,
 }
 
 type ApiError = (StatusCode, Json<serde_json::Value>);
@@ -58,7 +59,7 @@ async fn me_handler(
         r#"
         SELECT u.id, u.email, u.role, p.full_name, p.national_id, p.blood_type,
                p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact,
-               p.cmu_active, p.cmu_expiry_date
+               p.cmu_active, p.cmu_expiry_date, p.religion
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
         WHERE u.id = ?
@@ -86,6 +87,7 @@ async fn me_handler(
         emergency_contact: row.try_get("emergency_contact").ok(),
         cmu_active: row.try_get("cmu_active").ok(),
         cmu_expiry_date: row.try_get("cmu_expiry_date").ok(),
+        religion: row.try_get("religion").ok(),
     }))
 }
 
@@ -100,6 +102,7 @@ pub struct UpdateProfilePayload {
     pub weight: Option<f64>,
     pub allergies: Option<String>,
     pub emergency_contact: Option<String>,
+    pub religion: Option<String>,
 }
 
 /// PUT /api/auth/me/update — update user profile fields
@@ -197,6 +200,15 @@ async fn update_me_handler(
     if let Some(contact) = payload.emergency_contact {
         sqlx::query("UPDATE patients SET emergency_contact = ? WHERE user_id = ?")
             .bind(contact)
+            .bind(&id_str)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    }
+
+    if let Some(religion) = payload.religion {
+        sqlx::query("UPDATE patients SET religion = ? WHERE user_id = ?")
+            .bind(religion)
             .bind(&id_str)
             .execute(&mut *tx)
             .await

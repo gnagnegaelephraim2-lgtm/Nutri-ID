@@ -8,8 +8,7 @@ pub mod teleconsult_routes;
 pub mod vaccines_routes;
 pub mod fasting_routes;
 
-use axum::{routing::get, Json, Router};
-use serde_json::json;
+use axum::Router;
 use sqlx::SqlitePool;
 
 pub fn app_router() -> Router<SqlitePool> {

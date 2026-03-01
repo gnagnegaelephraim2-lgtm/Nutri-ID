@@ -2,29 +2,7 @@ version: '3.8'
 
 services:
   # ───────────────────────────────────────────────
-  # PostgreSQL — National Health Database
-  # ───────────────────────────────────────────────
-  postgres:
-    image: postgres:15-alpine
-    restart: unless-stopped
-    environment:
-      POSTGRES_USER: ${POSTGRES_USER:-nutriid_admin}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-secure_password_123}
-      POSTGRES_DB: ${POSTGRES_DB:-nutriid_national_db}
-    ports:
-      - "5432:5432"
-    volumes:
-      - pgdata:/var/lib/postgresql/data
-    networks:
-      - nutriid-net
-    healthcheck:
-      test: [ "CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-nutriid_admin}" ]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # ───────────────────────────────────────────────
-  # Backend — Rust / Axum API Server
+  # Backend — Rust / Axum API Server (SQLite)
   # ───────────────────────────────────────────────
   backend:
     build:
@@ -34,16 +12,15 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=postgres://${POSTGRES_USER:-nutriid_admin}:${POSTGRES_PASSWORD:-secure_password_123}@postgres:5432/${POSTGRES_DB:-nutriid_national_db}
+      - DATABASE_URL=sqlite:./nutriid.db?mode=rwc
       - RUST_LOG=${RUST_LOG:-info}
       - JWT_SECRET=${JWT_SECRET}
       - POLYGON_RPC_URL=${POLYGON_RPC_URL:-https://rpc-amoy.polygon.technology}
       - POLYGON_CHAIN_ID=${POLYGON_CHAIN_ID:-80002}
       - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
       - HEALTH_ID_CONTRACT_ADDRESS=${HEALTH_ID_CONTRACT_ADDRESS}
-    depends_on:
-      postgres:
-        condition: service_healthy
+    volumes:
+      - sqlite-data:/app/data
     networks:
       - nutriid-net
     healthcheck:
@@ -65,8 +42,8 @@ services:
     volumes:
       # Nginx configuration
       - ./nginx/nginx.conf:/etc/nginx/nginx.conf:ro
-      # Frontend static files served directly by Nginx
-      - ./frontend:/usr/share/nginx/html:ro
+      # Frontend static files served directly by Nginx (Vite build output)
+      - ./frontend/dist:/usr/share/nginx/html:ro
       # Let's Encrypt SSL certificates (managed by Certbot)
       - certbot-certs:/etc/letsencrypt:ro
       # Certbot webroot for ACME challenge
@@ -98,7 +75,7 @@ services:
       - nginx
 
 volumes:
-  pgdata:
+  sqlite-data:
   certbot-certs:
   certbot-webroot:
   nginx-logs:
