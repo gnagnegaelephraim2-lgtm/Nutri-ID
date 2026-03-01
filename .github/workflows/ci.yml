@@ -41,7 +41,13 @@ jobs:
         with:
           workspaces: "backend -> target"
 
-      - name: 🔍 Check formatting
+      - name: �️ Setup Database
+        working-directory: backend
+        run: |
+          cargo install sqlx-cli --no-default-features --features sqlite
+          cargo sqlx database setup
+
+      - name: �🔍 Check formatting
         working-directory: backend
         run: cargo fmt --all -- --check
 
@@ -63,6 +69,8 @@ jobs:
   smart-contracts:
     name: ⛓ Smart Contracts CI
     runs-on: ubuntu-latest
+    env:
+      HARDHAT_TELEMETRY_OPTOUT: "true"
 
     steps:
       - name: 📥 Checkout code
@@ -77,7 +85,7 @@ jobs:
 
       - name: 📥 Install Hardhat dependencies
         working-directory: blockchain
-        run: npm ci
+        run: npm install
 
       - name: ⚙️ Compile Solidity contracts
         working-directory: blockchain

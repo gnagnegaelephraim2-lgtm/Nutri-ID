@@ -261,6 +261,7 @@ document.addEventListener('DOMContentLoaded', async () => {
     function initPageScripts(route) {
         if (route === 'dashboard') {
             initDashboardCharts();
+            initDashboardStats();
         }
         if (route === 'nutrition') {
             initNutritionCharts();
@@ -280,6 +281,15 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.nutriWeb3) {
                 window.nutriWeb3.init();
             }
+        }
+        if (route === 'teleconsult') {
+            initTeleconsult();
+        }
+        if (route === 'vaccines') {
+            initVaccines();
+        }
+        if (route === 'cmu') {
+            initCmu();
         }
         if (route === 'records') {
             if (window.nutriRecords) {
@@ -693,5 +703,302 @@ document.addEventListener('DOMContentLoaded', async () => {
                 }
             }
         });
+    }
+
+    async function initDashboardStats() {
+        const token = window.nutriAuth?.token;
+        if (!token) return;
+
+        try {
+            const res = await fetch('http://localhost:3000/api/dashboard', {
+                headers: { 'Authorization': `Bearer ${token}` }
+            });
+            if (!res.ok) return;
+            const d = await res.json();
+
+            // Stat strip
+            const recCount = document.getElementById('dash-record-count');
+            if (recCount) recCount.textContent = d.record_count;
+
+            const dashKcal = document.getElementById('dash-kcal-today');
+            if (dashKcal) dashKcal.textContent = Math.round(d.calories_today);
+
+            const cmuBadge = document.getElementById('dash-cmu-badge');
+            if (cmuBadge) {
+                cmuBadge.textContent = d.cmu_active ? 'Actif' : 'Inactif';
+                cmuBadge.className = d.cmu_active ? 'text-green' : 'text-orange';
+            }
+
+            // CMU card
+            const dashCmuIcon = document.getElementById('dash-cmu-icon');
+            const dashCmuLabel = document.getElementById('dash-cmu-label');
+            const dashCmuSub = document.getElementById('dash-cmu-sub');
+            if (dashCmuIcon) {
+                dashCmuIcon.innerHTML = d.cmu_active ? "<i class='bx bx-check-circle'></i>" : "<i class='bx bx-x-circle'></i>";
+                dashCmuIcon.className = d.cmu_active ? 'cmu-status active' : 'cmu-status inactive';
+            }
+            if (dashCmuLabel) {
+                dashCmuLabel.textContent = d.cmu_active ? 'Actif' : 'Non Couvert';
+                dashCmuLabel.className = d.cmu_active ? 'mt-2 text-green' : 'mt-2 text-orange';
+            }
+            if (dashCmuSub) {
+                dashCmuSub.textContent = d.cmu_active ? "Valide jusqu'au 31 Déc 2026" : 'Souscription requise';
+            }
+
+            // Last meal card
+            const dashLastMeal = document.getElementById('dash-last-meal');
+            if (dashLastMeal) {
+                if (d.last_meal) {
+                    dashLastMeal.innerHTML = `
+                        <strong>${d.last_meal}</strong>
+                        <p class="text-orange" style="font-size:1.4rem;font-weight:700;">${Math.round(d.calories_today)} kcal</p>
+                        <p class="text-sm text-muted">${d.nutrition_logs_today} repas aujourd'hui</p>`;
+                } else {
+                    dashLastMeal.innerHTML = `<p class="text-muted text-sm">Aucun repas enregistré aujourd'hui.</p>`;
+                }
+            }
+        } catch (e) {
+            const dashLastMeal = document.getElementById('dash-last-meal');
+            if (dashLastMeal) dashLastMeal.innerHTML = `<p class="text-muted text-sm">Erreur de chargement.</p>`;
+        }
+    }
+
+    function initCmu() {
+        const user = window.nutriAuth?.user;
+        const icon = document.getElementById('cmu-icon');
+        const label = document.getElementById('cmu-status-label');
+        const sub = document.getElementById('cmu-status-sub');
+        const uinfo = document.getElementById('cmu-user-info');
+
+        if (!user) {
+            if (label) label.textContent = "Non connecté";
+            if (sub) sub.textContent = "Veuillez vous connecter pour voir votre statut CMU.";
+            if (icon) icon.innerHTML = "<i class='bx bx-error-circle text-orange'></i>";
+            return;
+        }
+
+        const isCmuActive = user.cmu_active === 1;
+
+        if (label) {
+            label.textContent = isCmuActive ? "Statut CMU: Actif" : "Statut CMU: Inactif";
+            label.className = isCmuActive ? "text-green" : "text-orange";
+        }
+        if (sub) {
+            sub.textContent = isCmuActive ? "Vous êtes couvert par l'Assurance Maladie Universelle." : "Vous n'êtes pas inscrit à la CMU.";
+        }
+        if (icon) {
+            icon.innerHTML = isCmuActive ? "<i class='bx bxs-check-shield text-green'></i>" : "<i class='bx bx-shield-x text-orange'></i>";
+        }
+        if (uinfo) {
+            uinfo.style.display = 'block';
+            document.getElementById('cmu-name').textContent = user.full_name || user.email;
+            document.getElementById('cmu-blood').textContent = `NIP: ${user.national_id || 'Non Renseigné'} | Sang: ${user.blood_type || 'N/A'}`;
+        }
+    }
+
+    async function initTeleconsult() {
+        const API = 'http://localhost:3000/api/teleconsults';
+        const token = window.nutriAuth?.token;
+        if (!token) return;
+
+        const form = document.getElementById('teleconsult-form');
+        const msg = document.getElementById('tc-msg');
+        const listEl = document.getElementById('tc-list');
+        const emptyEl = document.getElementById('tc-empty');
+        const loadingEl = document.getElementById('tc-loading');
+
+        async function loadConsults() {
+            if (!listEl) return;
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+            listEl.innerHTML = '';
+
+            try {
+                const res = await fetch(API, { headers: { 'Authorization': `Bearer ${token}` } });
+                const data = await res.json();
+
+                if (loadingEl) loadingEl.style.display = 'none';
+
+                if (!res.ok) throw new Error(data.error || 'Erreur API');
+
+                if (data.length === 0) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    return;
+                }
+
+                data.forEach(tc => {
+                    const row = document.createElement('div');
+                    row.className = 'appointment-item mt-2 dash-hover';
+                    row.style.cssText = 'display:flex; padding:0.8rem; background:var(--bg-color); border:1px solid var(--border-color); border-radius:8px; align-items:center; gap:1rem; cursor:pointer;';
+
+                    const dt = new Date(tc.scheduled_at);
+                    const day = dt.getDate();
+                    const mnth = dt.toLocaleString('fr-FR', { month: 'short' });
+                    const time = dt.toLocaleString('fr-FR', { hour: '2-digit', minute: '2-digit' });
+
+                    let statusBadge = '';
+                    switch (tc.status) {
+                        case 'pending': statusBadge = `<span style="background:var(--color-orange);color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">En attente</span>`; break;
+                        case 'confirmed': statusBadge = `<span style="background:var(--color-green);color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Confirmé</span>`; break;
+                        case 'completed': statusBadge = `<span style="background:#4B5563;color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Terminé</span>`; break;
+                        case 'canceled': statusBadge = `<span style="background:#e53e3e;color:white;padding:2px 8px;border-radius:12px;font-size:0.75rem;">Annulé</span>`; break;
+                    }
+
+                    row.innerHTML = `
+                        <div style="background:var(--color-orange);color:white;padding:0.5rem;border-radius:8px;text-align:center;min-width:50px;">
+                            <div style="font-size:1.2rem;font-weight:bold;line-height:1;">${day}</div>
+                            <div style="font-size:0.8rem;text-transform:uppercase;">${mnth}</div>
+                        </div>
+                        <div style="flex:1;">
+                            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:0.3rem;">
+                                <strong>Consultation Standard</strong>
+                                ${statusBadge}
+                            </div>
+                            <div class="text-sm text-muted">
+                                <i class='bx bx-time-five'></i> ${time}
+                                <p class="mt-1" style="font-style:italic;">${tc.notes || 'Aucun motif renseigné'}</p>
+                            </div>
+                        </div>
+                    `;
+                    listEl.appendChild(row);
+                });
+            } catch (err) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                listEl.innerHTML = `<p class="text-sm text-red">Erreur: ${err.message}</p>`;
+            }
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('tc-submit-btn');
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Envoi...';
+                btn.disabled = true;
+                msg.style.display = 'none';
+
+                try {
+                    const scheduled_at = document.getElementById('tc-scheduled-at').value;
+                    const ds = new Date(scheduled_at).toISOString();
+                    const notes = document.getElementById('tc-notes').value;
+
+                    const res = await fetch(API, {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/json',
+                            'Authorization': `Bearer ${token}`
+                        },
+                        body: JSON.stringify({ doctor_id: null, scheduled_at: ds, notes })
+                    });
+
+                    const data = await res.json();
+                    if (!res.ok) throw new Error(data.error || 'Erreur API');
+
+                    form.reset();
+                    msg.innerHTML = "<i class='bx bx-check-circle'></i> Demande envoyée !";
+                    msg.style.color = "var(--color-green)";
+                    msg.style.display = "block";
+
+                    setTimeout(() => { msg.style.display = 'none'; }, 4000);
+
+                    await loadConsults();
+
+                } catch (err) {
+                    msg.innerHTML = `<i class='bx bx-error-circle'></i> Erreur: ${err.message}`;
+                    msg.style.color = "var(--color-orange)";
+                    msg.style.display = "block";
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "<i class='bx bx-send'></i> Envoyer la demande";
+                }
+            });
+        }
+
+        loadConsults();
+    }
+
+    async function initVaccines() {
+        const API = 'http://localhost:3000/api/vaccines';
+        const token = window.nutriAuth?.token;
+        const form = document.getElementById('vaccine-form');
+        const msg = document.getElementById('vax-msg');
+        const listEl = document.getElementById('vax-list');
+        const emptyEl = document.getElementById('vax-empty');
+        const loadingEl = document.getElementById('vax-loading');
+
+        function renderVaccine(v) {
+            const row = document.createElement('div');
+            row.style.cssText = 'padding:1rem;background:var(--bg-color);border:1px solid var(--border-color);border-radius:8px;margin-bottom:0.8rem;';
+            const dt = new Date(v.administered_at).toLocaleDateString('fr-FR');
+            const next = v.next_dose_at
+                ? `<div class="text-sm mt-1 text-orange"><i class='bx bx-calendar-exclamation'></i> Rappel: ${new Date(v.next_dose_at).toLocaleDateString('fr-FR')}</div>`
+                : '';
+            row.innerHTML = `
+                <div style="display:flex;justify-content:space-between;align-items:flex-start;">
+                    <div>
+                        <h4 style="margin:0;font-size:1.1rem;color:var(--color-green);"><i class='bx bx-injection'></i> ${v.vaccine_name}</h4>
+                        <div class="text-sm text-muted mt-1">Dose: <strong>${v.dose}</strong> | <i class='bx bx-buildings'></i> ${v.facility_name || 'Non spécifié'}</div>
+                        ${next}
+                    </div>
+                    <div class="text-sm" style="font-weight:600;background:rgba(0,154,68,0.1);color:var(--color-green);padding:4px 8px;border-radius:6px;">${dt}</div>
+                </div>`;
+            return row;
+        }
+
+        async function loadVaccines() {
+            if (!listEl) return;
+            if (loadingEl) loadingEl.style.display = 'block';
+            if (emptyEl) emptyEl.style.display = 'none';
+            listEl.innerHTML = '';
+            try {
+                const res = await fetch(API, { headers: { 'Authorization': `Bearer ${token}` } });
+                if (!res.ok) throw new Error(await res.text());
+                const data = await res.json();
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (!data || data.length === 0) { if (emptyEl) emptyEl.style.display = 'block'; return; }
+                data.forEach(v => listEl.appendChild(renderVaccine(v)));
+            } catch (err) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                listEl.innerHTML = `<p class="text-sm text-muted text-center">${err.message}</p>`;
+            }
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('vax-submit-btn');
+                btn.disabled = true;
+                btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Enregistrement...';
+                msg.style.display = 'none';
+                try {
+                    const res = await fetch(API, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({
+                            vaccine_name: document.getElementById('vax-name').value,
+                            dose: document.getElementById('vax-dose').value,
+                            administered_at: document.getElementById('vax-date').value,
+                            facility_name: document.getElementById('vax-location').value || null,
+                            next_dose_at: document.getElementById('vax-next').value || null
+                        })
+                    });
+                    if (!res.ok) throw new Error(await res.text());
+                    form.reset();
+                    msg.innerHTML = "<i class='bx bx-check-circle'></i> Vaccin enregistré !";
+                    msg.style.color = 'var(--color-green)';
+                    msg.style.display = 'block';
+                    setTimeout(() => { msg.style.display = 'none'; }, 3000);
+                    await loadVaccines();
+                } catch (err) {
+                    msg.innerHTML = `<i class='bx bx-error-circle'></i> Erreur: ${err.message}`;
+                    msg.style.color = 'var(--color-orange)';
+                    msg.style.display = 'block';
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "<i class='bx bx-save'></i> Enregistrer";
+                }
+            });
+        }
+
+        await loadVaccines();
     }
 });
