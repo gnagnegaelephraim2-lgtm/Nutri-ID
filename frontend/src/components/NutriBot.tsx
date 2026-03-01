@@ -75,11 +75,10 @@ export function NutriBot() {
               </div>
             )}
             <div
-              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${
-                msg.role === 'user'
+              className={`max-w-[80%] rounded-2xl px-3 py-2 text-sm ${msg.role === 'user'
                   ? 'bg-ci-orange text-white rounded-tr-sm'
-                  : 'bg-white/10 text-gray-200 rounded-tl-sm'
-              }`}
+                  : 'bg-[color:var(--glass-border)] text-gray-200 rounded-tl-sm'
+                }`}
               dangerouslySetInnerHTML={{ __html: formatMarkdown(msg.text) }}
             />
           </div>
@@ -89,7 +88,7 @@ export function NutriBot() {
             <div className="flex-shrink-0 flex h-7 w-7 items-center justify-center rounded-full bg-ci-green/20">
               <Bot className="h-4 w-4 text-ci-green" />
             </div>
-            <div className="rounded-2xl rounded-tl-sm bg-white/10 px-3 py-2 text-sm text-gray-400">
+            <div className="rounded-2xl rounded-tl-sm bg-[color:var(--glass-border)] px-3 py-2 text-sm text-muted-foreground">
               <span className="animate-pulse">...</span>
             </div>
           </div>

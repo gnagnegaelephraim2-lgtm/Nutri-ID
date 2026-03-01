@@ -27,13 +27,13 @@ export default function FindCare() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-4">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <MapPin className="h-6 w-6 text-ci-green" /> Trouver un Soin
           </h1>
-          <p className="text-sm text-gray-400">Recherchez les centres de santé affiliés à la CMU.</p>
+          <p className="text-sm text-muted-foreground">Recherchez les centres de santé affiliés à la CMU.</p>
         </div>
 
-        <div className="flex gap-3 flex-wrap text-xs text-gray-400">
+        <div className="flex gap-3 flex-wrap text-xs text-muted-foreground">
           <span><span className="text-ci-green font-bold">🏥</span> Hôpital CMU</span>
           <span><span className="text-ci-orange font-bold">🏥</span> Hôpital (Non-CMU)</span>
           <span><span className="text-ci-green font-bold">💊</span> Pharmacie CMU</span>
@@ -55,7 +55,7 @@ export default function FindCare() {
                 <Marker key={i} position={[f.lat, f.lng]} icon={facilityIcon(f.cmu, f.isPharmacy)}>
                   <Popup>
                     <div className="text-sm font-semibold">{f.name}</div>
-                    <div className="text-xs text-gray-600 mt-1">{f.type}</div>
+                    <div className="text-xs text-muted-foreground mt-1">{f.type}</div>
                     <div className="mt-1">
                       {f.cmu && <span className="text-xs text-green-600 font-medium">✓ CMU acceptée</span>}
                     </div>

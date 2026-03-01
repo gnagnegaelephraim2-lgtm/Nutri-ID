@@ -10,9 +10,26 @@ pub struct Claims {
     pub exp: usize,   // Expiration time
 }
 
-// Secret key for JWT (In production, read from env)
+/// Returns the JWT signing secret.
+/// In development (RUST_ENV=dev or unset), falls back to a local dev key.
+/// In production (RUST_ENV=production), panics immediately if JWT_SECRET is not set
+/// so the service never starts with a known-weak key.
 fn jwt_secret() -> String {
-    env::var("JWT_SECRET").unwrap_or_else(|_| "super_secret_nutri_id_key_for_dev_only".to_string())
+    match env::var("JWT_SECRET") {
+        Ok(secret) if !secret.is_empty() => secret,
+        _ => {
+            let is_prod = env::var("RUST_ENV")
+                .map(|v| v == "production")
+                .unwrap_or(false);
+            if is_prod {
+                panic!(
+                    "FATAL: JWT_SECRET env var is not set. \
+                     Refusing to start in production without a secure signing key."
+                );
+            }
+            "super_secret_nutri_id_key_for_dev_only".to_string()
+        }
+    }
 }
 
 pub fn create_jwt(user_id: Uuid, role: &str) -> String {

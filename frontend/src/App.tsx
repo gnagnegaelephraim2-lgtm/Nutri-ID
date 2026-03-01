@@ -17,12 +17,15 @@ import Cmu from '@/pages/Cmu';
 import Fasting from '@/pages/Fasting';
 import FindCare from '@/pages/FindCare';
 import Settings from '@/pages/Settings';
+import DoctorDashboard from '@/pages/DoctorDashboard';
+import ForgotPassword from '@/pages/ForgotPassword';
+import ResetPassword from '@/pages/ResetPassword';
 
 function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="relative flex h-screen overflow-hidden bg-ci-dark">
+    <div className="relative flex h-screen overflow-hidden">
       {/* Decorative background orbs */}
       <div className="glow-1 pointer-events-none" />
       <div className="glow-2 pointer-events-none" />
@@ -47,6 +50,8 @@ export default function App() {
       {/* Public routes */}
       <Route path="/login" element={<Login />} />
       <Route path="/register" element={<Register />} />
+      <Route path="/forgot-password" element={<ForgotPassword />} />
+      <Route path="/reset-password" element={<ResetPassword />} />
 
       {/* Protected routes — all wrapped in AppShell */}
       <Route
@@ -67,6 +72,7 @@ export default function App() {
         <Route path="/fasting" element={<Fasting />} />
         <Route path="/find-care" element={<FindCare />} />
         <Route path="/settings" element={<Settings />} />
+        <Route path="/doctor" element={<DoctorDashboard />} />
       </Route>
     </Routes>
   );

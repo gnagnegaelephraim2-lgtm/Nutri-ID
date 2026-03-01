@@ -67,7 +67,7 @@ function TodaySummary({ logs }: { logs: NutritionLog[] }) {
       <CardContent>
         <div className="text-center mb-4">
           <p className="text-4xl font-bold font-heading text-ci-orange">{totKcal}</p>
-          <p className="text-sm text-gray-400">kcal aujourd&apos;hui</p>
+          <p className="text-sm text-muted-foreground">kcal aujourd&apos;hui</p>
         </div>
         <div className="space-y-3">
           {[
@@ -77,10 +77,10 @@ function TodaySummary({ logs }: { logs: NutritionLog[] }) {
           ].map(({ label, val, max, unit, color }) => (
             <div key={label}>
               <div className="flex justify-between text-sm mb-1">
-                <span className="text-gray-400">{label}</span>
-                <span className="text-white font-medium">{Math.round(val)}{unit}</span>
+                <span className="text-muted-foreground">{label}</span>
+                <span className="text-foreground font-medium">{Math.round(val)}{unit}</span>
               </div>
-              <div className="h-2 rounded-full bg-white/10">
+              <div className="h-2 rounded-full bg-[color:var(--glass-border)]">
                 <div className={`h-full rounded-full ${color} transition-all`} style={{ width: `${pct(val, max)}%` }} />
               </div>
             </div>
@@ -118,10 +118,10 @@ export default function Nutrition() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <UtensilsCrossed className="h-6 w-6 text-ci-orange" /> Nutri-ID
           </h1>
-          <p className="text-sm text-gray-400">Suivi nutritionnel localisé pour la Côte d&apos;Ivoire.</p>
+          <p className="text-sm text-muted-foreground">Suivi nutritionnel localisé pour la Côte d&apos;Ivoire.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -131,7 +131,7 @@ export default function Nutrition() {
             <CardContent>
               <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
                 <div>
-                  <label className="text-sm text-gray-400">Nom du repas</label>
+                  <label className="text-sm text-muted-foreground">Nom du repas</label>
                   <Input className="mt-1" placeholder="Ex: Garba, Foutou banane..." {...register('meal_name')} />
                   {errors.meal_name && <p className="text-xs text-red-400 mt-1">{errors.meal_name.message}</p>}
                 </div>
@@ -142,13 +142,13 @@ export default function Nutrition() {
                     { label: 'Lipides (g)', field: 'fats' as const },
                   ].map(({ label, field }) => (
                     <div key={field}>
-                      <label className="text-xs text-gray-400">{label}</label>
+                      <label className="text-xs text-muted-foreground">{label}</label>
                       <Input className="mt-1" type="number" min="0" step="0.1" placeholder="0" {...register(field)} />
                     </div>
                   ))}
                 </div>
                 {preview > 0 && (
-                  <p className="text-center text-sm text-gray-400">≈ <span className="text-ci-orange font-semibold">{preview} kcal</span></p>
+                  <p className="text-center text-sm text-muted-foreground">≈ <span className="text-ci-orange font-semibold">{preview} kcal</span></p>
                 )}
                 <Button type="submit" className="w-full gap-2" disabled={mutation.isPending}>
                   <Save className="h-4 w-4" />
@@ -193,18 +193,18 @@ export default function Nutrition() {
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : !logs?.length ? (
-              <p className="text-center text-gray-500 py-6">Aucun repas enregistré. Commencez par logger un repas !</p>
+              <p className="text-center text-muted-foreground py-6">Aucun repas enregistré. Commencez par logger un repas !</p>
             ) : (
               <div className="space-y-2">
                 {logs.map((log) => (
-                  <div key={log.id} className="flex items-center justify-between py-2 border-b border-white/5 last:border-0">
+                  <div key={log.id} className="flex items-center justify-between py-2 border-b border-[color:var(--glass-border)] last:border-0">
                     <div>
-                      <p className="text-sm font-medium text-white">{log.meal_name}</p>
-                      <p className="text-xs text-gray-500">{new Date(log.logged_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                      <p className="text-sm font-medium text-foreground">{log.meal_name}</p>
+                      <p className="text-xs text-muted-foreground">{new Date(log.logged_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-ci-orange">{Math.round(log.calories)} kcal</p>
-                      <p className="text-xs text-gray-500">P:{log.proteins}g G:{log.carbs}g L:{log.fats}g</p>
+                      <p className="text-xs text-muted-foreground">P:{log.proteins}g G:{log.carbs}g L:{log.fats}g</p>
                     </div>
                   </div>
                 ))}

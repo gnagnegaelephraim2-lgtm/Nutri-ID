@@ -52,10 +52,10 @@ function CalendarGrid({ plan, logs }: { plan: FastingPlan; logs: FastingLog[] })
   return (
     <div>
       <div className="flex items-center justify-between mb-3">
-        <p className="text-sm text-gray-400">
+        <p className="text-sm text-muted-foreground">
           <span className="text-ci-green font-semibold">{successCount}</span> jours complétés
         </p>
-        <div className="flex gap-3 text-xs text-gray-500">
+        <div className="flex gap-3 text-xs text-muted-foreground">
           <span><span className="text-ci-green">■</span> Réussi</span>
           <span><span className="text-red-400">■</span> Manqué</span>
         </div>
@@ -75,7 +75,7 @@ function CalendarGrid({ plan, logs }: { plan: FastingPlan; logs: FastingLog[] })
               onClick={() => logMutation.mutate({ planId: plan.id, date: dateStr, status: isSuccess ? 'skipped' : 'success' })}
               className={`h-9 w-full rounded-md border text-xs font-medium transition-all ${isSuccess ? 'border-ci-green bg-ci-green/20 text-ci-green' :
                   isSkipped ? 'border-red-400 bg-red-400/20 text-red-400 line-through' :
-                    'border-white/10 bg-white/5 text-gray-400 hover:border-white/30'
+                    'border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] text-muted-foreground hover:border-white/30'
                 }`}
               title={dateStr}
             >
@@ -134,10 +134,10 @@ export default function Fasting() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <CalendarHeart className="h-6 w-6 text-ci-orange" /> {greeting}
           </h1>
-          <p className="text-sm text-gray-400">Suivi de vos jours de jeûne (Carême, Ramadan, Intermittent).</p>
+          <p className="text-sm text-muted-foreground">Suivi de vos jours de jeûne (Carême, Ramadan, Intermittent).</p>
         </div>
 
         {/* Active plan strip */}
@@ -145,16 +145,16 @@ export default function Fasting() {
           <CardContent className="p-4 flex items-center justify-between flex-wrap gap-4">
             <div>
               {isLoading ? <Skeleton className="h-5 w-40" /> : (
-                <h3 className="font-semibold text-white">
+                <h3 className="font-semibold text-foreground">
                   {activePlan ? `Jeûne En Cours : ${activePlan.fast_type.toUpperCase()}` : 'Aucun plan de jeûne actif'}
                 </h3>
               )}
-              <p className="text-sm text-gray-400 mt-0.5">{statusLine}</p>
+              <p className="text-sm text-muted-foreground mt-0.5">{statusLine}</p>
             </div>
             {activePlan && (
               <div className="text-right">
                 <p className="text-3xl font-bold font-heading text-ci-green">{logs?.filter((l) => l.status === 'success').length ?? 0}</p>
-                <p className="text-sm text-gray-400">Jours Complétés</p>
+                <p className="text-sm text-muted-foreground">Jours Complétés</p>
               </div>
             )}
           </CardContent>
@@ -168,7 +168,7 @@ export default function Fasting() {
               <CardContent>
                 <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-3">
                   <div>
-                    <label className="text-sm text-gray-400">Type de Jeûne</label>
+                    <label className="text-sm text-muted-foreground">Type de Jeûne</label>
                     <Select defaultValue={defaultFastType} onValueChange={(v) => setValue('fast_type', v)}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -177,12 +177,12 @@ export default function Fasting() {
                     </Select>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Date de début</label>
+                    <label className="text-sm text-muted-foreground">Date de début</label>
                     <Input className="mt-1" type="date" {...register('start_date')} />
                     {errors.start_date && <p className="text-xs text-red-400">{errors.start_date.message}</p>}
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Date de fin (Optionnel)</label>
+                    <label className="text-sm text-muted-foreground">Date de fin (Optionnel)</label>
                     <Input className="mt-1" type="date" {...register('end_date')} />
                   </div>
                   <Button type="submit" className="w-full gap-2" disabled={createMutation.isPending}>

@@ -1,12 +1,14 @@
-use axum::{routing::get, Json, Router};
+use axum::{routing::get, Extension, Json, Router};
 use serde::Serialize;
 use std::net::SocketAddr;
-use tower_http::cors::{Any, CorsLayer};
+use std::time::Duration;
+use tower_http::cors::{AllowOrigin, Any, CorsLayer};
 use tracing_subscriber::{layer::SubscriberExt, util::SubscriberInitExt};
 
 mod auth;
 mod blockchain;
 mod db;
+mod middleware;
 mod models;
 mod routes;
 
@@ -44,16 +46,32 @@ async fn main() {
         .expect("Failed to connect to SQLite. Check DATABASE_URL in .env");
     tracing::info!("✅ Database connected and migrations applied.");
 
-    let cors = CorsLayer::new()
-        .allow_origin(Any)
-        .allow_methods(Any)
-        .allow_headers(Any);
+    // In production set ALLOWED_ORIGIN=https://nutriid.ci; falls back to Any in dev.
+    let cors = match std::env::var("ALLOWED_ORIGIN") {
+        Ok(origin) => {
+            let header_val = origin
+                .parse::<axum::http::HeaderValue>()
+                .expect("ALLOWED_ORIGIN must be a valid HTTP header value");
+            CorsLayer::new()
+                .allow_origin(AllowOrigin::exact(header_val))
+                .allow_methods(Any)
+                .allow_headers(Any)
+        }
+        Err(_) => CorsLayer::new()
+            .allow_origin(Any)
+            .allow_methods(Any)
+            .allow_headers(Any),
+    };
+
+    // Rate limiter: 10 auth attempts per IP per 60 seconds
+    let auth_rate_limiter = middleware::rate_limit::RateLimiter::new(10, Duration::from_secs(60));
 
     // Merge routers with shared DB pool state
     let app = Router::new()
         .route("/api/health", get(health_check))
         .merge(routes::app_router())
         .with_state(pool)
+        .layer(Extension(auth_rate_limiter))
         .layer(cors);
 
     let addr = SocketAddr::from(([0, 0, 0, 0], 3000));

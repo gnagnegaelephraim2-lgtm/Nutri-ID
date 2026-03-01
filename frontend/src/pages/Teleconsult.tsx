@@ -4,12 +4,15 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Video, Send, X } from 'lucide-react';
+import { Video, Send, X, User } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
+import {
+  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+} from '@/components/ui/select';
 import {
   Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter, DialogDescription,
 } from '@/components/ui/dialog';
@@ -18,6 +21,7 @@ import { api } from '@/lib/api';
 import type { Teleconsult as TeleconsultType, TeleconsultStatus } from '@/types/api';
 
 const teleconsultSchema = z.object({
+  doctor_id: z.string().optional(),
   scheduled_at: z.string().min(1, 'Date requise'),
   notes: z.string().optional(),
 });
@@ -33,21 +37,24 @@ const STATUS_MAP: Record<TeleconsultStatus, { label: string; variant: 'default' 
 export default function Teleconsult() {
   const qc = useQueryClient();
   const [cancelId, setCancelId] = useState<string | null>(null);
+  const [selectedDoctor, setSelectedDoctor] = useState<string>('');
 
   const { data: consults, isLoading } = useQuery({ queryKey: ['teleconsults'], queryFn: api.getTeleconsults });
+  const { data: doctors } = useQuery({ queryKey: ['doctors'], queryFn: api.getDoctors });
   const { register, handleSubmit, reset, formState: { errors } } = useForm<TeleconsultForm>({
     resolver: zodResolver(teleconsultSchema),
   });
 
   const createMutation = useMutation({
     mutationFn: (data: TeleconsultForm) => api.postTeleconsult({
-      doctor_id: null,
+      doctor_id: selectedDoctor || null,
       scheduled_at: new Date(data.scheduled_at).toISOString(),
       notes: data.notes || null,
     }),
     onSuccess: () => {
       toast.success('Demande envoyée !');
       reset();
+      setSelectedDoctor('');
       qc.invalidateQueries({ queryKey: ['teleconsults'] });
     },
     onError: (err: Error) => toast.error(err.message),
@@ -67,10 +74,10 @@ export default function Teleconsult() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <Video className="h-6 w-6 text-ci-orange" /> Téléconsultation
           </h1>
-          <p className="text-sm text-gray-400">Consultez un médecin à distance, depuis chez vous.</p>
+          <p className="text-sm text-muted-foreground">Consultez un médecin à distance, depuis chez vous.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -80,14 +87,30 @@ export default function Teleconsult() {
             <CardContent>
               <form onSubmit={handleSubmit((d) => createMutation.mutate(d))} className="space-y-3">
                 <div>
-                  <label className="text-sm text-gray-400">Date et heure</label>
+                  <label className="text-sm text-muted-foreground">Médecin (optionnel)</label>
+                  <Select value={selectedDoctor} onValueChange={setSelectedDoctor}>
+                    <SelectTrigger className="mt-1">
+                      <SelectValue placeholder="Choisir un médecin..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {doctors?.map((doc) => (
+                        <SelectItem key={doc.id} value={doc.id}>
+                          <span className="font-medium">{doc.full_name}</span>
+                          {doc.specialty && <span className="text-muted-foreground ml-1">· {doc.specialty}</span>}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div>
+                  <label className="text-sm text-muted-foreground">Date et heure</label>
                   <Input className="mt-1" type="datetime-local" {...register('scheduled_at')} />
                   {errors.scheduled_at && <p className="text-xs text-red-400">{errors.scheduled_at.message}</p>}
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Motif</label>
+                  <label className="text-sm text-muted-foreground">Motif</label>
                   <textarea
-                    className="mt-1 w-full min-h-[80px] rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white resize-none focus:outline-none focus:ring-1 focus:ring-ci-orange"
+                    className="mt-1 w-full min-h-[80px] rounded-md border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-3 py-2 text-sm text-foreground resize-none focus:outline-none focus:ring-1 focus:ring-ci-orange"
                     placeholder="Décrivez vos symptômes..."
                     {...register('notes')}
                   />
@@ -102,36 +125,46 @@ export default function Teleconsult() {
 
           {/* List */}
           <div className="lg:col-span-2 space-y-3">
-            <h2 className="font-semibold text-white">Mes consultations</h2>
+            <h2 className="font-semibold text-foreground">Mes consultations</h2>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
               ))
             ) : !consults?.length ? (
               <Card><CardContent className="py-10 text-center">
-                <Video className="h-10 w-10 text-gray-600 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">Aucune consultation planifiée.</p>
+                <Video className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Aucune consultation planifiée.</p>
               </CardContent></Card>
             ) : (
               consults.map((tc: TeleconsultType) => {
                 const dt = new Date(tc.scheduled_at);
                 const canCancel = tc.status === 'pending' || tc.status === 'confirmed';
                 const { label, variant } = STATUS_MAP[tc.status];
+                const assignedDoctor = doctors?.find((d) => d.id === tc.doctor_id);
                 return (
                   <Card key={tc.id}>
                     <CardContent className="p-4">
                       <div className="flex items-start gap-4">
-                        <div className="flex-shrink-0 w-12 rounded-lg bg-ci-orange text-white text-center py-1">
+                        <div className="flex-shrink-0 w-12 rounded-lg bg-ci-orange text-foreground text-center py-1">
                           <p className="text-lg font-bold leading-none">{dt.getDate()}</p>
                           <p className="text-xs uppercase">{dt.toLocaleString('fr-FR', { month: 'short' })}</p>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center justify-between gap-2">
-                            <p className="font-medium text-white">Consultation Standard</p>
+                            <div>
+                              <p className="font-medium text-foreground">
+                                {assignedDoctor ? `Dr. ${assignedDoctor.full_name}` : 'Consultation Standard'}
+                              </p>
+                              {assignedDoctor?.specialty && (
+                                <p className="text-xs text-muted-foreground flex items-center gap-1">
+                                  <User className="h-3 w-3" /> {assignedDoctor.specialty}
+                                </p>
+                              )}
+                            </div>
                             <Badge variant={variant}>{label}</Badge>
                           </div>
-                          <p className="text-sm text-gray-400 mt-0.5">{dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
-                          {tc.notes && <p className="text-xs text-gray-500 mt-1 italic">{tc.notes}</p>}
+                          <p className="text-sm text-muted-foreground mt-0.5">{dt.toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}</p>
+                          {tc.notes && <p className="text-xs text-muted-foreground mt-1 italic">{tc.notes}</p>}
                           {canCancel && (
                             <Button
                               variant="outline"

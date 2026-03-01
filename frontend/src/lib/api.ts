@@ -25,6 +25,7 @@ import type {
   FastingPlanPayload,
   FastingLog,
   FastingLogPayload,
+  DoctorSummary,
 } from '@/types/api';
 
 const BASE = (import.meta.env.VITE_API_URL as string) ?? '';
@@ -74,6 +75,18 @@ export const api = {
   updatePassword: (payload: UpdatePasswordPayload) =>
     request<{ message: string }>('/api/auth/me/password', { method: 'PUT', body: JSON.stringify(payload) }),
 
+  forgotPassword: (email: string) =>
+    request<{ message: string; reset_token?: string }>('/api/auth/forgot-password', {
+      method: 'POST',
+      body: JSON.stringify({ email }),
+    }),
+
+  resetPassword: (token: string, new_password: string) =>
+    request<{ message: string }>('/api/auth/reset-password', {
+      method: 'POST',
+      body: JSON.stringify({ token, new_password }),
+    }),
+
   // ─── Dashboard ────────────────────────────────────────────────────────────
   getDashboard: () =>
     request<DashboardStats>('/api/dashboard'),
@@ -122,6 +135,19 @@ export const api = {
   // ─── AI Chat ──────────────────────────────────────────────────────────────
   chat: (payload: AiChatPayload) =>
     request<AiChatResponse>('/api/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
+
+  // ─── Doctor ───────────────────────────────────────────────────────────────
+  getDoctors: () =>
+    request<DoctorSummary[]>('/api/doctor/list'),
+
+  getDoctorTeleconsults: () =>
+    request<Teleconsult[]>('/api/doctor/teleconsults'),
+
+  updateDoctorTeleconsultStatus: (id: string, payload: { status: TeleconsultStatus; meeting_link?: string | null; notes?: string | null }) =>
+    request<Teleconsult>(`/api/doctor/teleconsults/${id}/status`, {
+      method: 'PUT',
+      body: JSON.stringify(payload),
+    }),
 
   // ─── Fasting ──────────────────────────────────────────────────────────────
   getFastingPlans: () =>

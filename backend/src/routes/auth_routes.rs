@@ -3,6 +3,8 @@ use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use uuid::Uuid;
 
+use crate::middleware::rate_limit::auth_rate_limit;
+
 #[derive(Deserialize)]
 pub struct LoginPayload {
     email: String,
@@ -16,12 +18,19 @@ pub struct AuthResponse {
 }
 
 pub fn router() -> Router<SqlitePool> {
-    Router::new()
+    // /login and /register are rate-limited; authenticated routes are not
+    let rate_limited = Router::new()
         .route("/login", post(login_handler))
         .route("/register", post(register_handler))
+        .layer(axum::middleware::from_fn(auth_rate_limit));
+
+    Router::new()
+        .merge(rate_limited)
         .route("/me", axum::routing::get(me_handler))
         .route("/me/update", axum::routing::put(update_me_handler))
         .route("/me/password", axum::routing::put(change_password_handler))
+        .route("/forgot-password", post(forgot_password_handler))
+        .route("/reset-password", post(reset_password_handler))
 }
 
 #[derive(Serialize)]
@@ -47,6 +56,13 @@ type ApiError = (StatusCode, Json<serde_json::Value>);
 
 fn api_err(code: StatusCode, msg: &str) -> ApiError {
     (code, Json(serde_json::json!({"error": msg})))
+}
+
+fn is_valid_email(email: &str) -> bool {
+    let mut parts = email.splitn(2, '@');
+    let local = parts.next().unwrap_or("");
+    let domain = parts.next().unwrap_or("");
+    !local.is_empty() && domain.contains('.') && !domain.starts_with('.') && !domain.ends_with('.')
 }
 
 /// GET /api/auth/me — returns current user profile from JWT
@@ -105,12 +121,12 @@ pub struct UpdateProfilePayload {
     pub religion: Option<String>,
 }
 
-/// PUT /api/auth/me/update — update user profile fields
+/// PUT /api/auth/me/update — update user profile fields, returns updated UserProfile
 async fn update_me_handler(
     claims: crate::auth::Claims,
     State(pool): State<SqlitePool>,
     Json(payload): Json<UpdateProfilePayload>,
-) -> Result<Json<serde_json::Value>, ApiError> {
+) -> Result<Json<UserProfile>, ApiError> {
     let id_str = claims.sub.to_string();
 
     let mut tx = pool
@@ -219,9 +235,39 @@ async fn update_me_handler(
         .await
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    Ok(Json(
-        serde_json::json!({ "message": "Profile updated successfully" }),
-    ))
+    // Return the updated profile so the client can refresh state without an extra round-trip
+    let row = sqlx::query(
+        r#"
+        SELECT u.id, u.email, u.role, p.full_name, p.national_id, p.blood_type,
+               p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact,
+               p.cmu_active, p.cmu_expiry_date, p.religion
+        FROM users u
+        LEFT JOIN patients p ON u.id = p.user_id
+        WHERE u.id = ?
+        "#,
+    )
+    .bind(&id_str)
+    .fetch_one(&pool)
+    .await
+    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    Ok(Json(UserProfile {
+        id: row.try_get("id").unwrap_or_default(),
+        email: row.try_get("email").unwrap_or_default(),
+        role: row.try_get("role").unwrap_or_default(),
+        full_name: row.try_get("full_name").ok(),
+        blood_type: row.try_get("blood_type").ok(),
+        national_id: row.try_get("national_id").ok(),
+        date_of_birth: row.try_get("date_of_birth").ok(),
+        sex: row.try_get("sex").ok(),
+        height: row.try_get("height").ok(),
+        weight: row.try_get("weight").ok(),
+        allergies: row.try_get("allergies").ok(),
+        emergency_contact: row.try_get("emergency_contact").ok(),
+        cmu_active: row.try_get("cmu_active").ok(),
+        cmu_expiry_date: row.try_get("cmu_expiry_date").ok(),
+        religion: row.try_get("religion").ok(),
+    }))
 }
 
 /// POST /api/auth/login — validates credentials against DB, returns JWT
@@ -282,6 +328,10 @@ pub struct RegisterPayload {
     full_name: Option<String>,
     blood_type: Option<String>,
     national_id: Option<String>,
+    // Doctor-specific fields
+    license_number: Option<String>,
+    specialty: Option<String>,
+    facility_name: Option<String>,
 }
 
 /// POST /api/auth/register — hashes password and inserts user into DB
@@ -289,6 +339,13 @@ async fn register_handler(
     State(pool): State<SqlitePool>,
     Json(payload): Json<RegisterPayload>,
 ) -> Result<Json<AuthResponse>, ApiError> {
+    if !is_valid_email(&payload.email) {
+        return Err(api_err(StatusCode::BAD_REQUEST, "Adresse email invalide"));
+    }
+    if payload.password.len() < 8 {
+        return Err(api_err(StatusCode::BAD_REQUEST, "Le mot de passe doit contenir au moins 8 caractères"));
+    }
+
     let role = payload.role.unwrap_or_else(|| "PATIENT".to_string());
 
     // Hash password with bcrypt cost factor 12
@@ -342,6 +399,36 @@ async fn register_handler(
         .execute(&mut *tx)
         .await
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    } else if role == "DOCTOR" {
+        let name = payload
+            .full_name
+            .unwrap_or_else(|| "Nouveau Médecin".to_string());
+
+        let license = match payload.license_number {
+            Some(l) if !l.trim().is_empty() => l,
+            _ => format!(
+                "CI-MED-TEMP-{}",
+                &Uuid::new_v4().to_string()[..8].to_uppercase()
+            ),
+        };
+
+        sqlx::query(
+            "INSERT INTO doctors (user_id, full_name, license_number, specialty, facility_name) VALUES (?, ?, ?, ?, ?)"
+        )
+        .bind(&id_str)
+        .bind(name)
+        .bind(license)
+        .bind(&payload.specialty)
+        .bind(&payload.facility_name)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| {
+            if e.to_string().contains("UNIQUE constraint") {
+                api_err(StatusCode::CONFLICT, "License number already registered")
+            } else {
+                api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string())
+            }
+        })?;
     }
 
     tx.commit()
@@ -406,5 +493,163 @@ async fn change_password_handler(
 
     Ok(Json(
         serde_json::json!({ "message": "Mot de passe mis à jour avec succès" }),
+    ))
+}
+
+// ─── Password Reset ────────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+pub struct ForgotPasswordPayload {
+    email: String,
+}
+
+/// POST /api/auth/forgot-password
+/// Creates a 15-minute reset token for the given email.
+/// In production this token would be delivered via email/SMS; here it is
+/// returned in the response body so the frontend can link directly to the
+/// reset page (suitable while no email service is configured).
+async fn forgot_password_handler(
+    State(pool): State<SqlitePool>,
+    Json(payload): Json<ForgotPasswordPayload>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    // Look up user — return a generic success even if not found to prevent
+    // email enumeration attacks.
+    let row = sqlx::query("SELECT id FROM users WHERE email = ?")
+        .bind(&payload.email)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    let Some(row) = row else {
+        return Ok(Json(serde_json::json!({
+            "message": "Si cet email existe, un lien de réinitialisation a été envoyé."
+        })));
+    };
+
+    let user_id: String = row
+        .try_get("id")
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    // Generate a 256-bit hex token (two UUIDs concatenated, hyphens stripped)
+    let token = format!(
+        "{}{}",
+        Uuid::new_v4().to_string().replace('-', ""),
+        Uuid::new_v4().to_string().replace('-', "")
+    );
+
+    let expires_at = chrono::Utc::now()
+        .checked_add_signed(chrono::Duration::minutes(15))
+        .expect("valid timestamp")
+        .to_rfc3339();
+
+    // Invalidate any previous unused tokens for this user
+    sqlx::query("UPDATE password_reset_tokens SET used = 1 WHERE user_id = ? AND used = 0")
+        .bind(&user_id)
+        .execute(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    sqlx::query(
+        "INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)",
+    )
+    .bind(&token)
+    .bind(&user_id)
+    .bind(&expires_at)
+    .execute(&pool)
+    .await
+    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    tracing::info!("Password reset token for {}: {}", payload.email, token);
+
+    Ok(Json(serde_json::json!({
+        "message": "Si cet email existe, un lien de réinitialisation a été envoyé.",
+        // TODO: remove `reset_token` once an email service is wired up
+        "reset_token": token
+    })))
+}
+
+#[derive(Deserialize)]
+pub struct ResetPasswordPayload {
+    token: String,
+    new_password: String,
+}
+
+/// POST /api/auth/reset-password
+/// Validates the token, updates the password, and marks the token as used.
+async fn reset_password_handler(
+    State(pool): State<SqlitePool>,
+    Json(payload): Json<ResetPasswordPayload>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    if payload.new_password.len() < 8 {
+        return Err(api_err(
+            StatusCode::BAD_REQUEST,
+            "Le nouveau mot de passe doit contenir au moins 8 caractères.",
+        ));
+    }
+
+    let row = sqlx::query(
+        "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?",
+    )
+    .bind(&payload.token)
+    .fetch_optional(&pool)
+    .await
+    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?
+    .ok_or_else(|| api_err(StatusCode::BAD_REQUEST, "Lien de réinitialisation invalide."))?;
+
+    let used: i64 = row
+        .try_get("used")
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    if used != 0 {
+        return Err(api_err(
+            StatusCode::BAD_REQUEST,
+            "Ce lien a déjà été utilisé.",
+        ));
+    }
+
+    let expires_at_str: String = row
+        .try_get("expires_at")
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    let expires_at = chrono::DateTime::parse_from_rfc3339(&expires_at_str)
+        .map_err(|_| api_err(StatusCode::INTERNAL_SERVER_ERROR, "Invalid token expiry format"))?;
+
+    if chrono::Utc::now() > expires_at {
+        return Err(api_err(
+            StatusCode::BAD_REQUEST,
+            "Ce lien a expiré. Veuillez en demander un nouveau.",
+        ));
+    }
+
+    let user_id: String = row
+        .try_get("user_id")
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    let new_hash = bcrypt::hash(&payload.new_password, 12)
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    let mut tx = pool
+        .begin()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    sqlx::query("UPDATE users SET password_hash = ? WHERE id = ?")
+        .bind(&new_hash)
+        .bind(&user_id)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    sqlx::query("UPDATE password_reset_tokens SET used = 1 WHERE token = ?")
+        .bind(&payload.token)
+        .execute(&mut *tx)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    tx.commit()
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    Ok(Json(
+        serde_json::json!({ "message": "Mot de passe réinitialisé avec succès. Vous pouvez maintenant vous connecter." }),
     ))
 }

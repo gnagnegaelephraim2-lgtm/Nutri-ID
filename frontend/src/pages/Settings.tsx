@@ -105,8 +105,8 @@ export default function Settings() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white">{t('settings.title')}</h1>
-          <p className="text-sm text-gray-400">{t('settings.subtitle')}</p>
+          <h1 className="font-heading text-2xl font-bold text-foreground">{t('settings.title')}</h1>
+          <p className="text-sm text-muted-foreground">{t('settings.subtitle')}</p>
         </div>
 
         <Tabs defaultValue="profile" className="max-w-2xl">
@@ -123,16 +123,16 @@ export default function Settings() {
               <CardContent className="pt-6">
                 <form onSubmit={hsProfile((d) => profileMutation.mutate(d))} className="space-y-4">
                   <div>
-                    <label className="text-sm font-medium text-gray-300">{t('settings.name_label')}</label>
+                    <label className="text-sm font-medium text-muted-foreground">{t('settings.name_label')}</label>
                     <Input className="mt-1" {...regProfile('full_name')} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm font-medium text-gray-300">{t('settings.nip_label')}</label>
+                      <label className="text-sm font-medium text-muted-foreground">{t('settings.nip_label')}</label>
                       <Input className="mt-1" {...regProfile('national_id')} />
                     </div>
                     <div>
-                      <label className="text-sm font-medium text-gray-300">{t('settings.blood_label')}</label>
+                      <label className="text-sm font-medium text-muted-foreground">{t('settings.blood_label')}</label>
                       <Select defaultValue={user?.blood_type || 'O+'} onValueChange={(v) => svProfile('blood_type', v)}>
                         <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                         <SelectContent>{bloodTypes.map((bt) => <SelectItem key={bt} value={bt}>{bt}</SelectItem>)}</SelectContent>
@@ -141,11 +141,11 @@ export default function Settings() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-gray-400">Date de Naissance</label>
+                      <label className="text-sm text-muted-foreground">Date de Naissance</label>
                       <Input className="mt-1" type="date" {...regProfile('date_of_birth')} />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-400">Sexe</label>
+                      <label className="text-sm text-muted-foreground">Sexe</label>
                       <Select defaultValue={user?.sex || ''} onValueChange={(v) => svProfile('sex', v)}>
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Sélectionner" /></SelectTrigger>
                         <SelectContent>
@@ -157,25 +157,25 @@ export default function Settings() {
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-gray-400">Poids (kg)</label>
+                      <label className="text-sm text-muted-foreground">Poids (kg)</label>
                       <Input className="mt-1" type="number" step="0.1" {...regProfile('weight')} />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-400">Taille (cm)</label>
+                      <label className="text-sm text-muted-foreground">Taille (cm)</label>
                       <Input className="mt-1" type="number" step="1" {...regProfile('height')} />
                     </div>
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Allergies</label>
+                    <label className="text-sm text-muted-foreground">Allergies</label>
                     <Input className="mt-1" placeholder="Ex: Pénicilline, Arachides..." {...regProfile('allergies')} />
                   </div>
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-gray-400">Contact d'Urgence</label>
+                      <label className="text-sm text-muted-foreground">Contact d'Urgence</label>
                       <Input className="mt-1" placeholder="+225 00000000" {...regProfile('emergency_contact')} />
                     </div>
                     <div>
-                      <label className="text-sm text-gray-400">Religion</label>
+                      <label className="text-sm text-muted-foreground">Religion</label>
                       <Select defaultValue={user?.religion || ''} onValueChange={(v) => svProfile('religion', v)}>
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Non spécifiée" /></SelectTrigger>
                         <SelectContent>
@@ -202,8 +202,8 @@ export default function Settings() {
               <CardContent className="pt-6 space-y-6">
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-white flex items-center gap-2"><Globe className="h-4 w-4 text-ci-orange" /> Langue</p>
-                    <p className="text-sm text-gray-400">Choisissez votre langue préférée</p>
+                    <p className="font-medium text-foreground flex items-center gap-2"><Globe className="h-4 w-4 text-ci-orange" /> Langue</p>
+                    <p className="text-sm text-muted-foreground">Choisissez votre langue préférée</p>
                   </div>
                   <Select value={lang} onValueChange={(v) => setLang(v as Lang)}>
                     <SelectTrigger className="w-36"><SelectValue /></SelectTrigger>
@@ -213,8 +213,8 @@ export default function Settings() {
                 <Separator />
                 <div className="flex items-center justify-between">
                   <div>
-                    <p className="font-medium text-white flex items-center gap-2"><Moon className="h-4 w-4 text-ci-orange" /> Thème</p>
-                    <p className="text-sm text-gray-400">Actuel: {theme === 'dark' ? 'Sombre' : 'Clair'}</p>
+                    <p className="font-medium text-foreground flex items-center gap-2"><Moon className="h-4 w-4 text-ci-orange" /> Thème</p>
+                    <p className="text-sm text-muted-foreground">Actuel: {theme === 'dark' ? 'Sombre' : 'Clair'}</p>
                   </div>
                   <Button variant="outline" size="sm" onClick={toggle}>
                     {theme === 'dark' ? '☀️ Clair' : '🌙 Sombre'}
@@ -233,14 +233,14 @@ export default function Settings() {
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <p className="text-sm text-gray-400 mb-4">Configurez vos clés Pinata pour activer le stockage chiffré sur IPFS. Les clés sont stockées <strong>localement dans votre navigateur</strong>, jamais sur nos serveurs.</p>
+                <p className="text-sm text-muted-foreground mb-4">Configurez vos clés Pinata pour activer le stockage chiffré sur IPFS. Les clés sont stockées <strong>localement dans votre navigateur</strong>, jamais sur nos serveurs.</p>
                 <form onSubmit={savePinata} className="space-y-3">
                   <div>
-                    <label className="text-sm text-gray-400">Pinata API Key</label>
+                    <label className="text-sm text-muted-foreground">Pinata API Key</label>
                     <Input className="mt-1" type="password" name="pinata_key" defaultValue={localStorage.getItem('pinata_api_key') || ''} placeholder="Votre Pinata API Key..." />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Pinata Secret API Key</label>
+                    <label className="text-sm text-muted-foreground">Pinata Secret API Key</label>
                     <Input className="mt-1" type="password" name="pinata_secret" defaultValue={localStorage.getItem('pinata_secret_key') || ''} placeholder="Votre Pinata Secret Key..." />
                   </div>
                   <Button type="submit" variant="outline" className="w-full gap-2">
@@ -262,11 +262,11 @@ export default function Settings() {
               <CardContent className="space-y-4">
                 <form onSubmit={hsPw((d) => passwordMutation.mutate(d))} className="space-y-3">
                   <div>
-                    <label className="text-sm text-gray-400">Mot de passe actuel</label>
+                    <label className="text-sm text-muted-foreground">Mot de passe actuel</label>
                     <Input className="mt-1" type="password" {...regPw('current_password')} />
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Nouveau mot de passe</label>
+                    <label className="text-sm text-muted-foreground">Nouveau mot de passe</label>
                     <Input className="mt-1" type="password" {...regPw('new_password')} />
                   </div>
                   <Button type="submit" variant="outline" className="w-full border-red-500/30 text-red-400 hover:bg-red-500/10" disabled={passwordMutation.isPending}>

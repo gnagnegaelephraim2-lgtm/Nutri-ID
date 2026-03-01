@@ -1,6 +1,6 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FolderOpen, Flame, ShieldCheck, Utensils, Plus, TrendingUp } from 'lucide-react';
+import { FolderOpen, Flame, ShieldCheck, Utensils, Plus, TrendingUp, Bell, Syringe } from 'lucide-react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -49,7 +49,28 @@ export default function Dashboard() {
     queryFn: api.getNutrition,
   });
 
+  const { data: vaccines } = useQuery({
+    queryKey: ['vaccines'],
+    queryFn: api.getVaccines,
+  });
+
   const chartData = nutritionLogs ? buildDailyKcal(nutritionLogs) : [];
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const in30Days = new Date(today);
+  in30Days.setDate(today.getDate() + 30);
+
+  const overdueVaccines = (vaccines ?? []).filter((v) => {
+    if (!v.next_dose_at) return false;
+    return new Date(v.next_dose_at) < today;
+  });
+
+  const upcomingVaccines = (vaccines ?? []).filter((v) => {
+    if (!v.next_dose_at) return false;
+    const d = new Date(v.next_dose_at);
+    return d >= today && d <= in30Days;
+  });
 
   const expiryDate = user?.cmu_expiry_date
     ? new Date(user.cmu_expiry_date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -61,8 +82,8 @@ export default function Dashboard() {
         {/* Header */}
         <div className="flex items-center justify-between">
           <div>
-            <h1 className="font-heading text-2xl font-bold text-white">{t('dashboard.title')}</h1>
-            <p className="text-sm text-gray-400">{t('dashboard.subtitle')}</p>
+            <h1 className="font-heading text-2xl font-bold text-foreground">{t('dashboard.title')}</h1>
+            <p className="text-sm text-muted-foreground">{t('dashboard.subtitle')}</p>
           </div>
           <Button asChild size="sm" className="gap-1.5">
             <Link to="/records">
@@ -84,8 +105,8 @@ export default function Dashboard() {
                 <CardContent className="flex items-center gap-4 p-5">
                   <FolderOpen className="h-8 w-8 text-ci-orange flex-shrink-0" />
                   <div>
-                    <p className="text-2xl font-bold font-heading text-white">{stats?.record_count ?? 0}</p>
-                    <p className="text-sm text-gray-400">Dossiers médicaux</p>
+                    <p className="text-2xl font-bold font-heading text-foreground">{stats?.record_count ?? 0}</p>
+                    <p className="text-sm text-muted-foreground">Dossiers médicaux</p>
                   </div>
                 </CardContent>
               </Card>
@@ -93,8 +114,8 @@ export default function Dashboard() {
                 <CardContent className="flex items-center gap-4 p-5">
                   <Flame className="h-8 w-8 text-ci-green flex-shrink-0" />
                   <div>
-                    <p className="text-2xl font-bold font-heading text-white">{Math.round(stats?.calories_today ?? 0)}</p>
-                    <p className="text-sm text-gray-400">kcal aujourd&apos;hui</p>
+                    <p className="text-2xl font-bold font-heading text-foreground">{Math.round(stats?.calories_today ?? 0)}</p>
+                    <p className="text-sm text-muted-foreground">kcal aujourd&apos;hui</p>
                   </div>
                 </CardContent>
               </Card>
@@ -105,7 +126,7 @@ export default function Dashboard() {
                     <Badge variant={stats?.cmu_active ? 'green' : 'default'}>
                       {stats?.cmu_active ? 'Actif' : 'Inactif'}
                     </Badge>
-                    <p className="text-sm text-gray-400 mt-1">Statut CMU</p>
+                    <p className="text-sm text-muted-foreground mt-1">Statut CMU</p>
                   </div>
                 </CardContent>
               </Card>
@@ -167,12 +188,12 @@ export default function Dashboard() {
                   <p className={`text-xl font-bold font-heading ${stats?.cmu_active ? 'text-ci-green' : 'text-ci-orange'}`}>
                     {stats?.cmu_active ? 'Actif' : 'Non Couvert'}
                   </p>
-                  <p className="text-sm text-gray-400 mt-1">
+                  <p className="text-sm text-muted-foreground mt-1">
                     {stats?.cmu_active
                       ? expiryDate ? `Valide jusqu'au ${expiryDate}` : 'Couverture active'
                       : 'Souscription requise'}
                   </p>
-                  <ul className="mt-3 space-y-1 text-left text-sm text-gray-400">
+                  <ul className="mt-3 space-y-1 text-left text-sm text-muted-foreground">
                     <li className="flex items-center gap-2"><ShieldCheck className="h-3 w-3 text-ci-green" /> Couverture à 70%</li>
                     <li className="flex items-center gap-2"><ShieldCheck className="h-3 w-3 text-ci-green" /> Réseau Pharmaceutique</li>
                   </ul>
@@ -181,6 +202,48 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         </div>
+
+        {/* Vaccine reminders */}
+        {(overdueVaccines.length > 0 || upcomingVaccines.length > 0) && (
+          <Card className="border-ci-orange/30">
+            <CardHeader className="pb-2">
+              <CardTitle className="flex items-center gap-2 text-base">
+                <Bell className="h-4 w-4 text-ci-orange" />
+                Rappels vaccins
+                <span className="ml-auto text-xs font-normal text-ci-orange bg-ci-orange/10 rounded-full px-2 py-0.5 border border-ci-orange/20">
+                  {overdueVaccines.length + upcomingVaccines.length} rappel{overdueVaccines.length + upcomingVaccines.length > 1 ? 's' : ''}
+                </span>
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-2">
+              {overdueVaccines.map((v) => (
+                <div key={v.id} className="flex items-center justify-between gap-3 rounded-lg border border-red-500/20 bg-red-500/10 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Syringe className="h-3.5 w-3.5 text-red-400 flex-shrink-0" />
+                    <span className="text-sm text-foreground">{v.vaccine_name} — Dose {v.dose}</span>
+                  </div>
+                  <span className="text-xs text-red-400 font-medium whitespace-nowrap">
+                    En retard · {new Date(v.next_dose_at!).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+              ))}
+              {upcomingVaccines.map((v) => (
+                <div key={v.id} className="flex items-center justify-between gap-3 rounded-lg border border-ci-orange/20 bg-ci-orange/10 px-3 py-2">
+                  <div className="flex items-center gap-2">
+                    <Syringe className="h-3.5 w-3.5 text-ci-orange flex-shrink-0" />
+                    <span className="text-sm text-foreground">{v.vaccine_name} — Dose {v.dose}</span>
+                  </div>
+                  <span className="text-xs text-ci-orange font-medium whitespace-nowrap">
+                    {new Date(v.next_dose_at!).toLocaleDateString('fr-FR')}
+                  </span>
+                </div>
+              ))}
+              <Link to="/vaccines" className="block text-center text-xs text-ci-green hover:underline pt-1">
+                Voir tous les vaccins →
+              </Link>
+            </CardContent>
+          </Card>
+        )}
 
         {/* Last meal */}
         <Card>
@@ -196,14 +259,14 @@ export default function Dashboard() {
             ) : stats?.last_meal ? (
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="font-semibold text-white">{stats.last_meal}</p>
-                  <p className="text-sm text-gray-400">{stats.nutrition_logs_today} repas aujourd&apos;hui</p>
+                  <p className="font-semibold text-foreground">{stats.last_meal}</p>
+                  <p className="text-sm text-muted-foreground">{stats.nutrition_logs_today} repas aujourd&apos;hui</p>
                 </div>
                 <p className="text-3xl font-bold font-heading text-ci-orange">{Math.round(stats.calories_today)} kcal</p>
               </div>
             ) : (
               <div className="flex items-center justify-between">
-                <p className="text-sm text-gray-500">Aucun repas enregistré aujourd&apos;hui.</p>
+                <p className="text-sm text-muted-foreground">Aucun repas enregistré aujourd&apos;hui.</p>
                 <Button asChild variant="outline" size="sm">
                   <Link to="/nutrition"><Plus className="h-4 w-4 mr-1" /> Logger un repas</Link>
                 </Button>

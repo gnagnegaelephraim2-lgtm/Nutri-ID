@@ -21,7 +21,7 @@ export interface UserProfile {
 
 export interface AuthResponse {
   token: string;
-  user: UserProfile;
+  role: string;
 }
 
 export interface LoginPayload {
@@ -111,11 +111,15 @@ export type TeleconsultStatus = 'pending' | 'confirmed' | 'completed' | 'cancele
 
 export interface Teleconsult {
   id: string;
+  patient_id: string;
+  patient_name?: string | null; // present on doctor-facing endpoints (JOIN)
   doctor_id: string | null;
   scheduled_at: string;
   notes: string | null;
+  meeting_link: string | null;
   status: TeleconsultStatus;
   created_at: string;
+  updated_at: string;
 }
 
 export interface TeleconsultPayload {
@@ -189,6 +193,15 @@ export interface AiChatPayload {
 
 export interface AiChatResponse {
   response: string;
+}
+
+// ─── Doctor ───────────────────────────────────────────────────────────────────
+
+export interface DoctorSummary {
+  id: string;
+  full_name: string;
+  specialty: string | null;
+  facility_name: string | null;
 }
 
 // ─── Fasting ─────────────────────────────────────────────────────────────────

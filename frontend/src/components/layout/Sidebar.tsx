@@ -2,13 +2,13 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, LayoutDashboard, CreditCard, FolderOpen, ShieldPlus,
   Video, ShieldCheck, UtensilsCrossed, MapPin, CalendarHeart,
-  Settings, LogOut, Plus,
+  Settings, LogOut, Plus, Stethoscope,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
-const navItems = [
+const patientNavItems = [
   { to: '/',           icon: Home,            i18nKey: 'nav.home' },
   { to: '/dashboard',  icon: LayoutDashboard, i18nKey: 'nav.dashboard' },
   { to: '/health-id',  icon: CreditCard,      i18nKey: 'nav.health_id' },
@@ -22,6 +22,14 @@ const navItems = [
   { to: '/settings',   icon: Settings,        i18nKey: 'nav.settings' },
 ];
 
+const doctorNavItems = [
+  { to: '/',           icon: Home,            i18nKey: 'nav.home' },
+  { to: '/doctor',     icon: Stethoscope,     i18nKey: 'nav.doctor_dashboard' },
+  { to: '/teleconsult',icon: Video,           i18nKey: 'nav.teleconsult' },
+  { to: '/find-care',  icon: MapPin,          i18nKey: 'nav.find_care' },
+  { to: '/settings',   icon: Settings,        i18nKey: 'nav.settings' },
+];
+
 interface SidebarProps {
   open: boolean;
   onClose: () => void;
@@ -31,6 +39,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
   const { user, logout } = useAuth();
   const { t } = useI18n();
   const navigate = useNavigate();
+  const navItems = user?.role === 'DOCTOR' ? doctorNavItems : patientNavItems;
 
   const initials = user
     ? (user.full_name || user.email).substring(0, 2).toUpperCase()
@@ -53,16 +62,16 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
       <aside
         className={cn(
-          'fixed top-0 left-0 z-30 flex h-full w-64 flex-col border-r border-white/10 bg-ci-dark/95 backdrop-blur-xl transition-transform duration-300 lg:relative lg:translate-x-0',
+          'fixed top-0 left-0 z-30 flex h-full w-64 flex-col border-r border-[color:var(--glass-border)] bg-background/95 backdrop-blur-xl transition-transform duration-300 lg:relative lg:translate-x-0',
           open ? 'translate-x-0' : '-translate-x-full'
         )}
       >
         {/* Logo */}
-        <div className="flex items-center gap-3 px-6 py-5 border-b border-white/10">
+        <div className="flex items-center gap-3 px-6 py-5 border-b border-[color:var(--glass-border)]">
           <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ci-orange">
-            <Plus className="h-5 w-5 text-white" />
+            <Plus className="h-5 w-5 text-foreground" />
           </div>
-          <span className="font-heading text-xl font-bold text-white">Nutri-ID</span>
+          <span className="font-heading text-xl font-bold text-foreground">Nutri-ID</span>
         </div>
 
         {/* Nav links */}
@@ -78,7 +87,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
                   'flex items-center gap-3 rounded-xl px-3 py-2.5 text-sm font-medium transition-all',
                   isActive
                     ? 'bg-ci-orange/20 text-ci-orange border border-ci-orange/30'
-                    : 'text-gray-400 hover:bg-white/5 hover:text-white'
+                    : 'text-muted-foreground hover:bg-[color:var(--glass-bg)] hover:text-foreground'
                 )
               }
             >
@@ -90,20 +99,20 @@ export function Sidebar({ open, onClose }: SidebarProps) {
 
         {/* User area */}
         {user && (
-          <div className="border-t border-white/10 px-4 py-4">
+          <div className="border-t border-[color:var(--glass-border)] px-4 py-4">
             <div className="flex items-center gap-3">
               <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ci-orange/20 text-ci-orange font-semibold text-sm">
                 {initials}
               </div>
               <div className="flex-1 min-w-0">
-                <p className="text-sm font-medium text-white truncate">
+                <p className="text-sm font-medium text-foreground truncate">
                   {user.full_name || user.email.split('@')[0]}
                 </p>
-                <p className="text-xs text-gray-500 truncate">{user.role}</p>
+                <p className="text-xs text-muted-foreground truncate">{user.role}</p>
               </div>
               <button
                 onClick={handleLogout}
-                className="text-gray-500 hover:text-ci-orange transition-colors"
+                className="text-muted-foreground hover:text-ci-orange transition-colors"
                 title="Se déconnecter"
               >
                 <LogOut className="h-4 w-4" />

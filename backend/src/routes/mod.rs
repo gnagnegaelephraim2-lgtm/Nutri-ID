@@ -2,11 +2,12 @@ pub mod ai_routes;
 pub mod auth_routes;
 pub mod blockchain_routes;
 pub mod dashboard_routes;
+pub mod doctor_routes;
+pub mod fasting_routes;
 pub mod nutrition_routes;
 pub mod records_routes;
 pub mod teleconsult_routes;
 pub mod vaccines_routes;
-pub mod fasting_routes;
 
 use axum::Router;
 use sqlx::SqlitePool;
@@ -22,6 +23,7 @@ pub fn app_router() -> Router<SqlitePool> {
         .nest("/api/vaccines", vaccines_routes::router())
         .nest("/api/teleconsults", teleconsult_routes::router())
         .nest("/api/fasting", fasting_routes::router())
+        .nest("/api/doctor", doctor_routes::router())
 }
 
 

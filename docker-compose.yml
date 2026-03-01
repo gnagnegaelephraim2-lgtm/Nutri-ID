@@ -12,13 +12,16 @@ services:
     ports:
       - "3000:3000"
     environment:
-      - DATABASE_URL=sqlite:./nutriid.db?mode=rwc
+      - DATABASE_URL=sqlite:/app/data/nutriid.db?mode=rwc
       - RUST_LOG=${RUST_LOG:-info}
       - JWT_SECRET=${JWT_SECRET}
+      - ALLOWED_ORIGIN=${ALLOWED_ORIGIN:-https://nutriid.ci}
+      - RUST_ENV=${RUST_ENV:-production}
       - POLYGON_RPC_URL=${POLYGON_RPC_URL:-https://rpc-amoy.polygon.technology}
       - POLYGON_CHAIN_ID=${POLYGON_CHAIN_ID:-80002}
       - RELAYER_PRIVATE_KEY=${RELAYER_PRIVATE_KEY}
       - HEALTH_ID_CONTRACT_ADDRESS=${HEALTH_ID_CONTRACT_ADDRESS}
+      - GEMINI_API_KEY=${GEMINI_API_KEY}
     volumes:
       - sqlite-data:/app/data
     networks:

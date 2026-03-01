@@ -3,7 +3,7 @@ import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { ShieldPlus, Save, Syringe, Calendar, Building } from 'lucide-react';
+import { ShieldPlus, Save, Syringe, Calendar, Building, AlertTriangle } from 'lucide-react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
@@ -25,6 +25,12 @@ type VaccineForm = z.infer<typeof vaccineSchema>;
 export default function Vaccines() {
   const qc = useQueryClient();
   const { data: vaccines, isLoading } = useQuery({ queryKey: ['vaccines'], queryFn: api.getVaccines });
+
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const overdueCount = (vaccines ?? []).filter(
+    (v) => v.next_dose_at && new Date(v.next_dose_at) < today,
+  ).length;
   const { register, handleSubmit, setValue, reset, formState: { errors } } = useForm<VaccineForm>({
     resolver: zodResolver(vaccineSchema),
     defaultValues: { dose: '1' },
@@ -48,11 +54,21 @@ export default function Vaccines() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <ShieldPlus className="h-6 w-6 text-ci-green" /> Carnet de Vaccination
           </h1>
-          <p className="text-sm text-gray-400">Votre historique vaccinal sécurisé.</p>
+          <p className="text-sm text-muted-foreground">Votre historique vaccinal sécurisé.</p>
         </div>
+
+        {overdueCount > 0 && (
+          <div className="flex items-center gap-3 rounded-xl border border-red-500/30 bg-red-500/10 px-4 py-3">
+            <AlertTriangle className="h-5 w-5 text-red-400 flex-shrink-0" />
+            <p className="text-sm text-red-300">
+              <strong>{overdueCount} rappel{overdueCount > 1 ? 's' : ''} vaccin{overdueCount > 1 ? 's' : ''} en retard.</strong>{' '}
+              Consultez votre médecin pour mettre à jour votre carnet vaccinal.
+            </p>
+          </div>
+        )}
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form */}
@@ -61,18 +77,18 @@ export default function Vaccines() {
             <CardContent>
               <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
                 <div>
-                  <label className="text-sm text-gray-400">Nom du vaccin</label>
+                  <label className="text-sm text-muted-foreground">Nom du vaccin</label>
                   <Input className="mt-1" placeholder="Ex: Fièvre jaune, BCG..." {...register('vaccine_name')} />
                   {errors.vaccine_name && <p className="text-xs text-red-400">{errors.vaccine_name.message}</p>}
                 </div>
                 <div className="grid grid-cols-2 gap-3">
                   <div>
-                    <label className="text-sm text-gray-400">Date</label>
+                    <label className="text-sm text-muted-foreground">Date</label>
                     <Input className="mt-1" type="date" {...register('administered_at')} />
                     {errors.administered_at && <p className="text-xs text-red-400">{errors.administered_at.message}</p>}
                   </div>
                   <div>
-                    <label className="text-sm text-gray-400">Dose</label>
+                    <label className="text-sm text-muted-foreground">Dose</label>
                     <Select defaultValue="1" onValueChange={(v) => setValue('dose', v)}>
                       <SelectTrigger className="mt-1"><SelectValue /></SelectTrigger>
                       <SelectContent>
@@ -82,11 +98,11 @@ export default function Vaccines() {
                   </div>
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Centre de santé</label>
+                  <label className="text-sm text-muted-foreground">Centre de santé</label>
                   <Input className="mt-1" placeholder="Ex: CHU de Treichville" {...register('facility_name')} />
                 </div>
                 <div>
-                  <label className="text-sm text-gray-400">Prochain rappel</label>
+                  <label className="text-sm text-muted-foreground">Prochain rappel</label>
                   <Input className="mt-1" type="date" {...register('next_dose_at')} />
                 </div>
                 <Button type="submit" className="w-full gap-2" disabled={mutation.isPending}>
@@ -99,15 +115,15 @@ export default function Vaccines() {
 
           {/* History */}
           <div className="lg:col-span-2 space-y-3">
-            <h2 className="font-semibold text-white">Historique vaccinal</h2>
+            <h2 className="font-semibold text-foreground">Historique vaccinal</h2>
             {isLoading ? (
               Array.from({ length: 3 }).map((_, i) => (
                 <Card key={i}><CardContent className="p-4"><Skeleton className="h-16 w-full" /></CardContent></Card>
               ))
             ) : !vaccines?.length ? (
               <Card><CardContent className="py-10 text-center">
-                <ShieldPlus className="h-10 w-10 text-gray-600 mx-auto mb-2" />
-                <p className="text-gray-500 text-sm">Aucun vaccin enregistré. Ajoutez votre premier vaccin !</p>
+                <ShieldPlus className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+                <p className="text-muted-foreground text-sm">Aucun vaccin enregistré. Ajoutez votre premier vaccin !</p>
               </CardContent></Card>
             ) : (
               vaccines.map((v) => {
@@ -120,12 +136,12 @@ export default function Vaccines() {
                           <p className="font-semibold text-ci-green flex items-center gap-2">
                             <Syringe className="h-4 w-4" /> {v.vaccine_name}
                           </p>
-                          <p className="text-sm text-gray-400 mt-1 flex items-center gap-3">
+                          <p className="text-sm text-muted-foreground mt-1 flex items-center gap-3">
                             <span>Dose: <strong>{v.dose}</strong></span>
                             {v.facility_name && <span className="flex items-center gap-1"><Building className="h-3 w-3" /> {v.facility_name}</span>}
                           </p>
                           {v.next_dose_at && (
-                            <p className={`text-xs mt-1 flex items-center gap-1 ${isUpcoming ? 'text-ci-orange' : 'text-gray-500'}`}>
+                            <p className={`text-xs mt-1 flex items-center gap-1 ${isUpcoming ? 'text-ci-orange' : 'text-muted-foreground'}`}>
                               <Calendar className="h-3 w-3" /> Rappel: {new Date(v.next_dose_at).toLocaleDateString('fr-FR')}
                             </p>
                           )}

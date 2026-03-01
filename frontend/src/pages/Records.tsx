@@ -79,10 +79,10 @@ export default function Records() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <FolderOpen className="h-6 w-6 text-ci-orange" /> Dossiers Médicaux
           </h1>
-          <p className="text-sm text-gray-400">Vos dossiers chiffrés AES-256, stockés sur IPFS.</p>
+          <p className="text-sm text-muted-foreground">Vos dossiers chiffrés AES-256, stockés sur IPFS.</p>
         </div>
 
         {/* Upload form */}
@@ -91,7 +91,7 @@ export default function Records() {
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div>
-                <label className="text-sm text-gray-400">Type de Document</label>
+                <label className="text-sm text-muted-foreground">Type de Document</label>
                 <Select defaultValue="ORDONNANCE" onValueChange={(v) => setValue('record_type', v)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
@@ -104,15 +104,15 @@ export default function Records() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm text-gray-400">Contenu / Description</label>
+                <label className="text-sm text-muted-foreground">Contenu / Description</label>
                 <textarea
-                  className="mt-1 w-full min-h-[100px] rounded-md border border-white/10 bg-white/5 px-3 py-2 text-sm text-white resize-y focus:outline-none focus:ring-1 focus:ring-ci-orange"
+                  className="mt-1 w-full min-h-[100px] rounded-md border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-1 focus:ring-ci-orange"
                   placeholder="Décrivez le document médical..."
                   {...register('content')}
                 />
                 {errors.content && <p className="text-xs text-red-400">{errors.content.message}</p>}
               </div>
-              <div className="flex items-center gap-2 rounded-lg bg-ci-green/10 border border-ci-green/20 px-3 py-2 text-sm text-gray-400">
+              <div className="flex items-center gap-2 rounded-lg bg-ci-green/10 border border-ci-green/20 px-3 py-2 text-sm text-muted-foreground">
                 <Lock className="h-4 w-4 text-ci-green flex-shrink-0" />
                 Le contenu sera chiffré avec votre NIP avant tout envoi.
                 {hasPinata ? <span className="text-ci-green font-medium ml-1">IPFS actif</span> : <span className="ml-1">Configurez Pinata dans les Paramètres pour activer IPFS.</span>}
@@ -132,8 +132,8 @@ export default function Records() {
           </div>
         ) : !records?.length ? (
           <Card><CardContent className="py-12 text-center">
-            <FolderOpen className="h-10 w-10 text-gray-600 mx-auto mb-2" />
-            <p className="text-gray-500">Aucun dossier médical enregistré.</p>
+            <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground">Aucun dossier médical enregistré.</p>
           </CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -145,14 +145,14 @@ export default function Records() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-ci-orange truncate">{r.record_type.replace('_', ' ')}</p>
-                        <p className="text-xs text-gray-500 mt-0.5">ID: {r.id.substring(0, 8)}… | {new Date(r.created_at).toLocaleDateString('fr-FR')}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">ID: {r.id.substring(0, 8)}… | {new Date(r.created_at).toLocaleDateString('fr-FR')}</p>
                         <div className="mt-2">
                           {hasCid ? (
                             <a href={`https://gateway.pinata.cloud/ipfs/${r.ipfs_cid}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-ci-green hover:underline">
                               <Link2 className="h-3 w-3" /> {r.ipfs_cid.substring(0, 20)}…
                             </a>
                           ) : (
-                            <span className="flex items-center gap-1 text-xs text-gray-500"><Server className="h-3 w-3" /> Stockage local</span>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground"><Server className="h-3 w-3" /> Stockage local</span>
                           )}
                         </div>
                       </div>

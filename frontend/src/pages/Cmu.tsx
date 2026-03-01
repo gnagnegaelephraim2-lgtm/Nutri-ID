@@ -39,10 +39,10 @@ export default function Cmu() {
     <PageTransition>
       <div className="p-4 lg:p-6 space-y-6">
         <div>
-          <h1 className="font-heading text-2xl font-bold text-white flex items-center gap-2">
+          <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
             <ShieldCheck className="h-6 w-6 text-ci-green" /> Couverture Maladie Universelle (CMU)
           </h1>
-          <p className="text-sm text-gray-400">Votre statut d&apos;assurance maladie nationale.</p>
+          <p className="text-sm text-muted-foreground">Votre statut d&apos;assurance maladie nationale.</p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -59,7 +59,7 @@ export default function Cmu() {
                 Statut CMU: {isCmuActive ? 'Actif' : 'Inactif'}
               </h2>
 
-              <p className="text-sm text-gray-400 mt-2">
+              <p className="text-sm text-muted-foreground mt-2">
                 {isCmuActive
                   ? expiryText ? `Couverture valide jusqu'au ${expiryText}.` : "Vous êtes couvert par l'Assurance Maladie Universelle."
                   : "Vous n'êtes pas inscrit à la CMU."}
@@ -74,16 +74,16 @@ export default function Cmu() {
               {name && (
                 <>
                   <Separator className="my-4" />
-                  <p className="font-semibold text-white">{name}</p>
-                  <p className="text-xs text-gray-500 mt-0.5">{bloodInfo}</p>
+                  <p className="font-semibold text-foreground">{name}</p>
+                  <p className="text-xs text-muted-foreground mt-0.5">{bloodInfo}</p>
                 </>
               )}
 
               {user?.cmu_expiry_date && (
                 <>
                   <Separator className="my-4" />
-                  <p className="text-xs text-gray-500">Date d&apos;expiration</p>
-                  <p className="text-sm font-semibold text-white">{expiryText}</p>
+                  <p className="text-xs text-muted-foreground">Date d&apos;expiration</p>
+                  <p className="text-sm font-semibold text-foreground">{expiryText}</p>
                 </>
               )}
             </CardContent>
@@ -97,10 +97,10 @@ export default function Cmu() {
             <CardContent>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 {BENEFITS.map(({ icon: Icon, title, desc }) => (
-                  <div key={title} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                  <div key={title} className="rounded-xl border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] p-4">
                     <Icon className="h-6 w-6 text-ci-green mb-2" />
-                    <h4 className="font-semibold text-white text-sm mb-1">{title}</h4>
-                    <p className="text-xs text-gray-400">{desc}</p>
+                    <h4 className="font-semibold text-foreground text-sm mb-1">{title}</h4>
+                    <p className="text-xs text-muted-foreground">{desc}</p>
                   </div>
                 ))}
               </div>
@@ -112,9 +112,9 @@ export default function Cmu() {
         <Card className="border-ci-green/20 bg-ci-green/5">
           <CardContent className="p-4 flex items-center gap-3">
             <Info className="h-6 w-6 text-ci-green flex-shrink-0" />
-            <p className="text-sm text-gray-400">
-              La CMU est gérée par la <strong className="text-white">Caisse Nationale d&apos;Assurance Maladie (CNAM-CI)</strong>.
-              Pour toute question, contactez le <strong className="text-white">0800 888 99</strong> (numéro gratuit)
+            <p className="text-sm text-muted-foreground">
+              La CMU est gérée par la <strong className="text-foreground">Caisse Nationale d&apos;Assurance Maladie (CNAM-CI)</strong>.
+              Pour toute question, contactez le <strong className="text-foreground">0800 888 99</strong> (numéro gratuit)
               ou rendez-vous dans un centre CNAM agréé.
             </p>
           </CardContent>

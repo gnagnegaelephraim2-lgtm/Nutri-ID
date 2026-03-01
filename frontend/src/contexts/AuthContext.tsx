@@ -24,9 +24,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   useEffect(() => {
     if (!token) {
+      setUser(null);
       setIsLoading(false);
       return;
     }
+    setIsLoading(true);
     api.getMe()
       .then(setUser)
       .catch(() => {
@@ -40,7 +42,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await api.login(payload);
     localStorage.setItem('nutriid_token', data.token);
     setToken(data.token);
-    setUser(data.user);
+    // user profile is loaded by the useEffect → getMe()
     navigate('/dashboard');
   }, [navigate]);
 
@@ -48,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const data = await api.register(payload);
     localStorage.setItem('nutriid_token', data.token);
     setToken(data.token);
-    setUser(data.user);
+    // user profile is loaded by the useEffect → getMe()
     navigate('/dashboard');
   }, [navigate]);
 

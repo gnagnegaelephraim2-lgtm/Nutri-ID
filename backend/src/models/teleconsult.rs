@@ -14,6 +14,22 @@ pub struct Teleconsultation {
     pub updated_at: String,
 }
 
+/// Like Teleconsultation but includes the patient's display name via JOIN.
+/// Used exclusively by doctor-facing endpoints.
+#[derive(Debug, Serialize, Deserialize, FromRow, Clone)]
+pub struct TeleconsultationWithPatient {
+    pub id: String,
+    pub patient_id: String,
+    pub patient_name: Option<String>,
+    pub doctor_id: Option<String>,
+    pub scheduled_at: String,
+    pub status: String,
+    pub meeting_link: Option<String>,
+    pub notes: Option<String>,
+    pub created_at: String,
+    pub updated_at: String,
+}
+
 #[derive(Debug, Deserialize)]
 pub struct CreateTeleconsultPayload {
     pub doctor_id: Option<String>,

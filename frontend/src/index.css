@@ -6,6 +6,52 @@
 
 @layer base {
   :root {
+    /* 
+      --- LIGHT THEME VARIABLES ---
+      Background: Light gray/white
+      Foreground: Almost black
+    */
+    --background: 0 0% 98%;
+    --foreground: 222 47% 11%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 222 47% 11%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 222 47% 11%;
+
+    --primary: 30 94% 49%;
+    --primary-foreground: 0 0% 100%;
+
+    --secondary: 210 40% 96.1%;
+    --secondary-foreground: 222.2 47.4% 11.2%;
+
+    --muted: 210 40% 96.1%;
+    --muted-foreground: 215.4 16.3% 46.9%;
+
+    --accent: 162 100% 30%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 214.3 31.8% 91.4%;
+    --input: 214.3 31.8% 91.4%;
+    --ring: 30 94% 49%;
+    --radius: 0.75rem;
+
+    /* Glass Effects defined explicitly for light mode */
+    --glass-bg: rgb(255 255 255 / 0.8);
+    --glass-bg-hover: rgb(255 255 255 / 0.9);
+    --glass-border: rgb(0 0 0 / 0.1);
+  }
+
+  .dark {
+    /* 
+      --- DARK THEME VARIABLES ---
+      Background: Nutri-ID deep blue
+      Foreground: White/off-white
+    */
     --background: 222 47% 11%;
     --foreground: 213 31% 91%;
 
@@ -34,7 +80,10 @@
     --input: 216 34% 17%;
     --ring: 30 94% 49%;
 
-    --radius: 0.75rem;
+    /* Glass Effects defined explicitly for dark mode */
+    --glass-bg: rgb(255 255 255 / 0.05);
+    --glass-bg-hover: rgb(255 255 255 / 0.1);
+    --glass-border: rgb(255 255 255 / 0.1);
   }
 
   * {
@@ -42,7 +91,7 @@
   }
 
   body {
-    @apply bg-ci-dark text-foreground font-sans antialiased;
+    @apply bg-background text-foreground font-sans antialiased;
     background-image:
       radial-gradient(ellipse at top left, rgba(247, 127, 0, 0.05) 0%, transparent 50%),
       radial-gradient(ellipse at bottom right, rgba(0, 154, 68, 0.05) 0%, transparent 50%);

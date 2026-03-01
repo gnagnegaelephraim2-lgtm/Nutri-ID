@@ -43,7 +43,7 @@ export default function Login() {
           <CardHeader className="text-center pb-4">
             <div className="flex justify-center mb-3">
               <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-ci-green">
-                <Plus className="h-7 w-7 text-white" />
+                <Plus className="h-7 w-7 text-foreground" />
               </div>
             </div>
             <CardTitle className="text-xl">Bienvenue sur Nutri-ID</CardTitle>
@@ -52,12 +52,12 @@ export default function Login() {
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">Email</label>
+                <label className="text-sm font-medium text-muted-foreground">Email</label>
                 <Input type="email" placeholder="votre@email.com" {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-gray-300">Mot de passe</label>
+                <label className="text-sm font-medium text-muted-foreground">Mot de passe</label>
                 <Input type="password" placeholder="••••••••" {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
@@ -65,12 +65,19 @@ export default function Login() {
                 {mutation.isPending ? 'Connexion...' : 'Se connecter →'}
               </Button>
             </form>
-            <p className="mt-4 text-center text-sm text-gray-500">
-              Pas encore de compte ?{' '}
-              <Link to="/register" className="text-ci-orange font-semibold hover:underline">
-                Créer mon ID Santé
-              </Link>
-            </p>
+            <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
+              <p>
+                <Link to="/forgot-password" className="text-ci-orange hover:underline">
+                  Mot de passe oublié ?
+                </Link>
+              </p>
+              <p>
+                Pas encore de compte ?{' '}
+                <Link to="/register" className="text-ci-orange font-semibold hover:underline">
+                  Créer mon ID Santé
+                </Link>
+              </p>
+            </div>
           </CardContent>
         </Card>
       </motion.div>

@@ -60,27 +60,27 @@ export default function Register() {
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Nom et Prénoms *</label>
+                <label className="text-sm font-medium text-muted-foreground">Nom et Prénoms *</label>
                 <Input placeholder="Gnagne, Chrys Elisée" {...register('full_name')} />
                 {errors.full_name && <p className="text-xs text-red-400">{errors.full_name.message}</p>}
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Email *</label>
+                <label className="text-sm font-medium text-muted-foreground">Email *</label>
                 <Input type="email" placeholder="votre@email.com" {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-gray-300">Mot de passe *</label>
+                <label className="text-sm font-medium text-muted-foreground">Mot de passe *</label>
                 <Input type="password" placeholder="••••••••" {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-300">NIP (Optionnel)</label>
+                  <label className="text-sm font-medium text-muted-foreground">NIP (Optionnel)</label>
                   <Input placeholder="CI-..." {...register('national_id')} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-gray-300">Groupe Sanguin</label>
+                  <label className="text-sm font-medium text-muted-foreground">Groupe Sanguin</label>
                   <Select defaultValue="O+" onValueChange={(v) => setValue('blood_type', v)}>
                     <SelectTrigger>
                       <SelectValue />
@@ -97,7 +97,7 @@ export default function Register() {
                 {mutation.isPending ? 'Création...' : 'Créer mon compte →'}
               </Button>
             </form>
-            <p className="mt-4 text-center text-sm text-gray-500">
+            <p className="mt-4 text-center text-sm text-muted-foreground">
               Déjà inscrit ?{' '}
               <Link to="/login" className="text-ci-green font-semibold hover:underline">Se connecter</Link>
             </p>
