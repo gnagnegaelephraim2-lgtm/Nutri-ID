@@ -878,7 +878,17 @@ document.addEventListener('DOMContentLoaded', async () => {
                 dashCmuLabel.className = d.cmu_active ? 'mt-2 text-green' : 'mt-2 text-orange';
             }
             if (dashCmuSub) {
-                dashCmuSub.textContent = d.cmu_active ? "Valide jusqu'au 31 Déc 2026" : 'Souscription requise';
+                if (d.cmu_active) {
+                    const expiryDate = window.nutriAuth?.user?.cmu_expiry_date;
+                    if (expiryDate) {
+                        const formatted = new Date(expiryDate).toLocaleDateString('fr-CI', { day: 'numeric', month: 'long', year: 'numeric' });
+                        dashCmuSub.textContent = `Valide jusqu'au ${formatted}`;
+                    } else {
+                        dashCmuSub.textContent = "Couverture active";
+                    }
+                } else {
+                    dashCmuSub.textContent = 'Souscription requise';
+                }
             }
 
             // Last meal card
@@ -913,14 +923,12 @@ document.addEventListener('DOMContentLoaded', async () => {
             return;
         }
 
-        const isCmuActive = user.cmu_active === 1;
+        // cmu_active comes as JSON boolean (true/false) or SQLite integer (1/0)
+        const isCmuActive = !!user.cmu_active;
 
         if (label) {
             label.textContent = isCmuActive ? "Statut CMU: Actif" : "Statut CMU: Inactif";
             label.className = isCmuActive ? "text-green" : "text-orange";
-        }
-        if (sub) {
-            sub.textContent = isCmuActive ? "Vous êtes couvert par l'Assurance Maladie Universelle." : "Vous n'êtes pas inscrit à la CMU.";
         }
         if (icon) {
             icon.innerHTML = isCmuActive ? "<i class='bx bxs-check-shield text-green'></i>" : "<i class='bx bx-shield-x text-orange'></i>";
@@ -929,6 +937,42 @@ document.addEventListener('DOMContentLoaded', async () => {
             uinfo.style.display = 'block';
             document.getElementById('cmu-name').textContent = user.full_name || user.email;
             document.getElementById('cmu-blood').textContent = `NIP: ${user.national_id || 'Non Renseigné'} | Sang: ${user.blood_type || 'N/A'}`;
+        }
+
+        // Expiry date
+        const expiryInfo = document.getElementById('cmu-expiry-info');
+        const expiryDateEl = document.getElementById('cmu-expiry-date');
+        const expiryWarning = document.getElementById('cmu-expiry-warning');
+
+        if (user.cmu_expiry_date) {
+            const expiry = new Date(user.cmu_expiry_date);
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const diffDays = Math.ceil((expiry - today) / (1000 * 60 * 60 * 24));
+            const formatted = expiry.toLocaleDateString('fr-CI', { day: 'numeric', month: 'long', year: 'numeric' });
+
+            if (expiryDateEl) expiryDateEl.textContent = formatted;
+            if (expiryInfo) expiryInfo.style.display = 'block';
+
+            if (sub) sub.textContent = isCmuActive
+                ? `Couverture valide jusqu'au ${formatted}.`
+                : "Vous n'êtes pas inscrit à la CMU.";
+
+            if (expiryWarning) {
+                if (diffDays <= 0) {
+                    expiryWarning.textContent = "⚠️ Couverture expirée";
+                    expiryWarning.style.color = 'var(--red, #e53e3e)';
+                    expiryWarning.style.display = 'block';
+                } else if (diffDays <= 30) {
+                    expiryWarning.textContent = `⚠️ Expire dans ${diffDays} jour${diffDays > 1 ? 's' : ''}`;
+                    expiryWarning.style.color = 'var(--orange)';
+                    expiryWarning.style.display = 'block';
+                }
+            }
+        } else {
+            if (sub) sub.textContent = isCmuActive
+                ? "Vous êtes couvert par l'Assurance Maladie Universelle."
+                : "Vous n'êtes pas inscrit à la CMU.";
         }
     }
 
