@@ -1,6 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, sqlx::FromRow)]
 pub struct FastingPlan {
     pub id: String,
     pub user_id: String,
@@ -13,7 +13,7 @@ pub struct FastingPlan {
     pub updated_at: String,
 }
 
-#[derive(Serialize, Deserialize, Clone, Debug)]
+#[derive(Serialize, Deserialize, Clone, Debug, sqlx::FromRow)]
 pub struct FastingLog {
     pub id: String,
     pub plan_id: String,

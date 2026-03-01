@@ -23,6 +23,7 @@ pub struct Patient {
     pub cmu_active: Option<bool>,
     pub wallet_address: Option<String>,
     pub health_id_token: Option<String>,
+    pub religion: Option<String>,
 }
 
 #[derive(Serialize, Deserialize, FromRow)]
