@@ -34,10 +34,18 @@ class AuthManager {
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({ email, password })
             });
+
+            if (!res.ok) {
+                const errText = await res.text();
+                try {
+                    const errObj = JSON.parse(errText);
+                    throw new Error(errObj.error || 'Erreur de connexion');
+                } catch {
+                    throw new Error(errText || 'Erreur de connexion');
+                }
+            }
+
             const data = await res.json();
-
-            if (!res.ok) throw new Error(data.error || data || 'Erreur de connexion');
-
             this.token = data.token;
             localStorage.setItem('nutriid_token', this.token);
             await this.fetchProfile();
@@ -147,7 +155,7 @@ class AuthManager {
         if (!userArea) return;
 
         if (this.user) {
-            const name = this.user.full_name || this.user.email.split('@')[0];
+            const name = this.user.full_name || (this.user.email ? this.user.email.split('@')[0] : 'U');
             const initials = name.substring(0, 2).toUpperCase();
             userArea.style.display = 'flex';
             userArea.innerHTML = `

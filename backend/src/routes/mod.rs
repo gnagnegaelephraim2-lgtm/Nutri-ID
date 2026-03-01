@@ -13,7 +13,6 @@ use sqlx::SqlitePool;
 
 pub fn app_router() -> Router<SqlitePool> {
     Router::new()
-        .route("/api/health", get(health_handler))
         .nest("/api/auth", auth_routes::router())
         .nest("/api/dashboard", dashboard_routes::router())
         .nest("/api/records", records_routes::router())
@@ -24,6 +23,4 @@ pub fn app_router() -> Router<SqlitePool> {
         .nest("/api/teleconsults", teleconsult_routes::router())
 }
 
-async fn health_handler() -> Json<serde_json::Value> {
-    Json(json!({ "status": "ok", "service": "nutriid-backend" }))
-}
+
