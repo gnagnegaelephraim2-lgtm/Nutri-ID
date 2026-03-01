@@ -21,6 +21,7 @@ pub fn router() -> Router<SqlitePool> {
         .route("/register", post(register_handler))
         .route("/me", axum::routing::get(me_handler))
         .route("/me/update", axum::routing::put(update_me_handler))
+        .route("/me/password", axum::routing::put(change_password_handler))
 }
 
 #[derive(Serialize)]
@@ -332,4 +333,61 @@ async fn register_handler(
 
     let token = crate::auth::create_jwt(id, &role);
     Ok(Json(AuthResponse { token, role }))
+}
+
+#[derive(Deserialize)]
+pub struct ChangePasswordPayload {
+    current_password: String,
+    new_password: String,
+}
+
+/// PUT /api/auth/me/password — verifies current password then updates to new hash
+async fn change_password_handler(
+    claims: crate::auth::Claims,
+    State(pool): State<SqlitePool>,
+    Json(payload): Json<ChangePasswordPayload>,
+) -> Result<Json<serde_json::Value>, ApiError> {
+    if payload.new_password.len() < 8 {
+        return Err(api_err(
+            StatusCode::BAD_REQUEST,
+            "New password must be at least 8 characters",
+        ));
+    }
+
+    let id_str = claims.sub.to_string();
+
+    let row = sqlx::query("SELECT password_hash FROM users WHERE id = ?")
+        .bind(&id_str)
+        .fetch_optional(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?
+        .ok_or_else(|| api_err(StatusCode::NOT_FOUND, "User not found"))?;
+
+    let current_hash: String = row
+        .try_get("password_hash")
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    let valid = bcrypt::verify(&payload.current_password, &current_hash)
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    if !valid {
+        return Err(api_err(
+            StatusCode::UNAUTHORIZED,
+            "Mot de passe actuel incorrect",
+        ));
+    }
+
+    let new_hash = bcrypt::hash(&payload.new_password, 12)
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    sqlx::query("UPDATE users SET password_hash = ? WHERE id = ?")
+        .bind(&new_hash)
+        .bind(&id_str)
+        .execute(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+
+    Ok(Json(
+        serde_json::json!({ "message": "Mot de passe mis à jour avec succès" }),
+    ))
 }

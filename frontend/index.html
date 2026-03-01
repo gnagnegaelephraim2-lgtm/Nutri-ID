@@ -341,6 +341,38 @@
             <!-- SBT Verification Badge -->
             <div id="sbt-verification" class="sbt-badge-wrapper mb-3"></div>
 
+            <!-- Mint / Check SBT Zone -->
+            <div id="mint-zone" class="card glass mb-4" style="max-width:640px;">
+                <div class="card-header">
+                    <h3><i class='bxl-polygon' style="color:#8247E5"></i> SBT Health ID — Polygon</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-sm text-muted mb-3">Vérifiez si votre adresse Polygon possède déjà un ID Santé
+                        SBT, ou mintez-en un nouveau.</p>
+                    <div class="form-group mb-3">
+                        <label class="text-sm">Adresse Portefeuille Polygon (0x…)</label>
+                        <div style="display:flex;gap:0.5rem;margin-top:0.5rem;">
+                            <input type="text" id="mint-wallet-addr" class="search-bar"
+                                style="flex:1;font-family:monospace;font-size:0.85rem;"
+                                placeholder="0x...">
+                            <button id="mint-use-metamask-btn" class="btn btn-secondary btn-sm"
+                                title="Utiliser l'adresse MetaMask connectée">
+                                <i class='bx bxl-metamask'></i>
+                            </button>
+                        </div>
+                    </div>
+                    <div style="display:flex;gap:0.75rem;flex-wrap:wrap;">
+                        <button id="mint-check-btn" class="btn btn-secondary btn-sm">
+                            <i class='bx bx-search'></i> Vérifier statut
+                        </button>
+                        <button id="mint-btn" class="btn btn-primary btn-sm" style="display:none;">
+                            <i class='bxl-polygon'></i> Minter mon ID Santé SBT
+                        </button>
+                    </div>
+                    <div id="mint-result" class="mt-3 text-sm" style="display:none;padding:0.75rem;border-radius:8px;background:rgba(0,0,0,0.15);"></div>
+                </div>
+            </div>
+
             <!-- Health ID Card -->
             <div class="id-card-wrapper">
                 <div class="id-card national-card">
@@ -842,11 +874,13 @@
                     <form id="security-form">
                         <div class="form-group mb-2">
                             <label class="text-sm">Mot de passe actuel</label>
-                            <input type="password" class="search-bar" style="width: 100%; margin-top: 0.5rem;" required>
+                            <input type="password" id="sec-current-password" class="search-bar"
+                                style="width: 100%; margin-top: 0.5rem;" required>
                         </div>
                         <div class="form-group mb-3">
                             <label class="text-sm">Nouveau mot de passe</label>
-                            <input type="password" class="search-bar" style="width: 100%; margin-top: 0.5rem;" required>
+                            <input type="password" id="sec-new-password" class="search-bar"
+                                style="width: 100%; margin-top: 0.5rem;" required minlength="8">
                         </div>
                         <button type="submit" class="btn btn-secondary w-full"
                             style="border-color: #ef4444; color: #ef4444;">

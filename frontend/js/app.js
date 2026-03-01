@@ -281,6 +281,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             if (window.nutriWeb3) {
                 window.nutriWeb3.init();
             }
+            initMintZone();
         }
         if (route === 'teleconsult') {
             initTeleconsult();
@@ -385,18 +386,43 @@ document.addEventListener('DOMContentLoaded', async () => {
                 });
             }
 
-            // Security Form (Mock Password Reset)
+            // Security Form — real password change
             const securityForm = document.getElementById('security-form');
             if (securityForm) {
-                securityForm.addEventListener('submit', (e) => {
+                securityForm.addEventListener('submit', async (e) => {
                     e.preventDefault();
-                    // Mock success for Premium UI feel
+                    const btn = securityForm.querySelector('button[type="submit"]');
                     const msgDiv = document.getElementById('security-message');
-                    msgDiv.innerHTML = "<i class='bx bx-check-circle'></i> Mot de passe mis à jour avec succès.";
-                    msgDiv.style.color = "var(--color-green)";
-                    msgDiv.style.display = 'block';
-                    securityForm.reset();
-                    setTimeout(() => { msgDiv.style.display = 'none'; }, 5000);
+                    const currentPw = document.getElementById('sec-current-password').value;
+                    const newPw = document.getElementById('sec-new-password').value;
+
+                    btn.disabled = true;
+                    btn.innerHTML = '<i class="bx bx-loader-alt bx-spin"></i> Mise à jour...';
+                    msgDiv.style.display = 'none';
+
+                    try {
+                        const res = await fetch('http://localhost:3000/api/auth/me/password', {
+                            method: 'PUT',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'Authorization': `Bearer ${window.nutriAuth?.token}`
+                            },
+                            body: JSON.stringify({ current_password: currentPw, new_password: newPw })
+                        });
+                        const data = await res.json();
+                        if (!res.ok) throw new Error(data.error || 'Erreur serveur');
+                        msgDiv.innerHTML = "<i class='bx bx-check-circle'></i> " + data.message;
+                        msgDiv.style.color = 'var(--color-green)';
+                        securityForm.reset();
+                    } catch (err) {
+                        msgDiv.innerHTML = `<i class='bx bx-error-circle'></i> ${err.message}`;
+                        msgDiv.style.color = '#ef4444';
+                    } finally {
+                        btn.disabled = false;
+                        btn.innerHTML = 'Mettre à jour le mot de passe';
+                        msgDiv.style.display = 'block';
+                        setTimeout(() => { msgDiv.style.display = 'none'; }, 6000);
+                    }
                 });
             }
 
@@ -1169,6 +1195,138 @@ document.addEventListener('DOMContentLoaded', async () => {
         }
 
         await loadRecords();
+    }
+
+    function initMintZone() {
+        const token = window.nutriAuth?.token;
+        const user = window.nutriAuth?.user;
+        const nip = user?.national_id;
+
+        const walletInput = document.getElementById('mint-wallet-addr');
+        const checkBtn = document.getElementById('mint-check-btn');
+        const mintBtn = document.getElementById('mint-btn');
+        const resultEl = document.getElementById('mint-result');
+        const metaMaskBtn = document.getElementById('mint-use-metamask-btn');
+
+        if (!walletInput) return;
+
+        // Pre-fill from localStorage or connected MetaMask wallet
+        const saved = localStorage.getItem('health_id_wallet');
+        if (saved) walletInput.value = saved;
+        // Delay slightly to let nutriWeb3.init() complete auto-connection
+        setTimeout(() => {
+            if (window.nutriWeb3?.userAddress && !walletInput.value) {
+                walletInput.value = window.nutriWeb3.userAddress;
+            }
+        }, 600);
+
+        if (metaMaskBtn) {
+            metaMaskBtn.addEventListener('click', () => {
+                if (window.nutriWeb3?.userAddress) {
+                    walletInput.value = window.nutriWeb3.userAddress;
+                } else {
+                    walletInput.placeholder = 'Connectez MetaMask d\'abord via le bouton ci-dessus';
+                }
+            });
+        }
+
+        function showResult(html, color) {
+            resultEl.innerHTML = html;
+            resultEl.style.color = color;
+            resultEl.style.display = 'block';
+        }
+
+        if (checkBtn) {
+            checkBtn.addEventListener('click', async () => {
+                const wallet = walletInput.value.trim();
+                if (!wallet || !wallet.startsWith('0x') || wallet.length < 20) {
+                    showResult("<i class='bx bx-error-circle'></i> Entrez une adresse Polygon valide (0x…)", '#ef4444');
+                    return;
+                }
+                checkBtn.disabled = true;
+                checkBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Vérification...";
+                resultEl.style.display = 'none';
+                try {
+                    const res = await fetch('http://localhost:3000/api/blockchain/check', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ wallet_address: wallet })
+                    });
+                    const data = await res.json();
+                    localStorage.setItem('health_id_wallet', wallet);
+
+                    // Update wallet display on the card
+                    const shortEl = document.getElementById('hid-wallet-short');
+                    if (shortEl) shortEl.textContent = `${wallet.substring(0, 6)}...${wallet.substring(38)}`;
+
+                    if (data.has_health_id) {
+                        showResult(
+                            "<i class='bx bx-check-circle'></i> <strong>SBT ID Santé détecté !</strong> Ce portefeuille possède déjà un Health ID SBT.",
+                            'var(--color-green)'
+                        );
+                        if (mintBtn) mintBtn.style.display = 'none';
+                        const verEl = document.getElementById('sbt-verification');
+                        if (verEl) verEl.innerHTML = `<span class="badge-pill bg-verified"><i class='bx bx-check-shield'></i> Identité Blockchain Vérifiée</span>`;
+                    } else {
+                        showResult(
+                            "<i class='bx bx-info-circle'></i> Aucun SBT trouvé pour cette adresse. Vous pouvez minter votre ID Santé.",
+                            'var(--color-orange)'
+                        );
+                        if (mintBtn) mintBtn.style.display = 'inline-flex';
+                    }
+                } catch (err) {
+                    showResult(`<i class='bx bx-error-circle'></i> Erreur: ${err.message}`, '#ef4444');
+                } finally {
+                    checkBtn.disabled = false;
+                    checkBtn.innerHTML = "<i class='bx bx-search'></i> Vérifier statut";
+                }
+            });
+        }
+
+        if (mintBtn) {
+            mintBtn.addEventListener('click', async () => {
+                const wallet = walletInput.value.trim();
+                if (!wallet) return;
+                if (!nip) {
+                    showResult(
+                        "<i class='bx bx-error-circle'></i> NIP manquant — complétez votre profil dans les <a href='#settings' style='color:var(--color-orange)'>Paramètres</a>.",
+                        '#ef4444'
+                    );
+                    return;
+                }
+                mintBtn.disabled = true;
+                mintBtn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Transaction en cours...";
+                try {
+                    const res = await fetch('http://localhost:3000/api/blockchain/mint', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${token}` },
+                        body: JSON.stringify({ wallet_address: wallet, nip })
+                    });
+                    const data = await res.json();
+                    if (data.success && data.data) {
+                        const { tx_hash, token_id, recipient } = data.data;
+                        const txShort = tx_hash ? `${tx_hash.substring(0, 20)}…` : '—';
+                        showResult(
+                            `<i class='bx bx-check-circle'></i> <strong style="color:var(--color-green)">SBT minté avec succès !</strong><br>
+                            <span>Token ID: <strong style="color:#8247E5">#${token_id}</strong></span><br>
+                            <span style="word-break:break-all;">Tx: <code style="font-size:0.8rem;">${txShort}</code></span>`,
+                            'var(--color-green)'
+                        );
+                        const tokenEl = document.getElementById('hid-token-id');
+                        if (tokenEl) tokenEl.textContent = `#${token_id}`;
+                        const verEl = document.getElementById('sbt-verification');
+                        if (verEl) verEl.innerHTML = `<span class="badge-pill bg-verified"><i class='bx bx-check-shield'></i> SBT Minté — Token #${token_id}</span>`;
+                        mintBtn.style.display = 'none';
+                    } else {
+                        throw new Error(data.error || 'Échec du mint blockchain');
+                    }
+                } catch (err) {
+                    showResult(`<i class='bx bx-error-circle'></i> ${err.message}`, '#ef4444');
+                    mintBtn.disabled = false;
+                    mintBtn.innerHTML = "<i class='bxl-polygon'></i> Minter mon ID Santé SBT";
+                }
+            });
+        }
     }
 
 });
