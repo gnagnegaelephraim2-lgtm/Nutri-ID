@@ -38,6 +38,8 @@ pub struct UserProfile {
     weight: Option<f64>,
     allergies: Option<String>,
     emergency_contact: Option<String>,
+    cmu_active: Option<bool>,
+    cmu_expiry_date: Option<String>,
 }
 
 type ApiError = (StatusCode, Json<serde_json::Value>);
@@ -55,7 +57,8 @@ async fn me_handler(
     let row = sqlx::query(
         r#"
         SELECT u.id, u.email, u.role, p.full_name, p.national_id, p.blood_type,
-               p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact
+               p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact,
+               p.cmu_active, p.cmu_expiry_date
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
         WHERE u.id = ?
@@ -81,6 +84,8 @@ async fn me_handler(
         weight: row.try_get("weight").ok(),
         allergies: row.try_get("allergies").ok(),
         emergency_contact: row.try_get("emergency_contact").ok(),
+        cmu_active: row.try_get("cmu_active").ok(),
+        cmu_expiry_date: row.try_get("cmu_expiry_date").ok(),
     }))
 }
 
