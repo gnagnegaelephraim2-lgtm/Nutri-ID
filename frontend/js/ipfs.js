@@ -109,7 +109,7 @@ async function decryptRecord(encryptedData, patientNip) {
  * @param {object} [metadata] - Optional IPFS metadata (name, keyvalues).
  * @returns {Promise<string>} - The IPFS CID (Content Identifier) of the uploaded file.
  */
-export async function uploadRecord(recordData, patientNip, pinataApiKey, pinataSecretKey, metadata = {}) {
+async function uploadRecord(recordData, patientNip, pinataApiKey, pinataSecretKey, metadata = {}) {
     if (!patientNip) throw new Error('Patient NIP is required for encryption.');
     if (!pinataApiKey || !pinataSecretKey) throw new Error('Pinata API credentials are required.');
 
@@ -164,7 +164,7 @@ export async function uploadRecord(recordData, patientNip, pinataApiKey, pinataS
  * @param {string} patientNip - Used to derive the decryption key.
  * @returns {Promise<object>} - The decrypted health record.
  */
-export async function fetchRecord(cid, patientNip) {
+async function fetchRecord(cid, patientNip) {
     const response = await fetch(`${IPFS_GATEWAY}${cid}`);
     if (!response.ok) throw new Error(`IPFS fetch failed (${response.status})`);
 
@@ -184,7 +184,7 @@ export async function fetchRecord(cid, patientNip) {
  * @param {string} [apiBase='http://localhost:3000'] - Backend API base URL.
  * @returns {Promise<object>} - The created health record from the backend.
  */
-export async function saveRecordToBackend(recordPayload, jwtToken, apiBase = 'http://localhost:3000') {
+async function saveRecordToBackend(recordPayload, jwtToken, apiBase = 'http://localhost:3000') {
     const response = await fetch(`${apiBase}/api/records`, {
         method: 'POST',
         headers: {
@@ -216,7 +216,7 @@ export async function saveRecordToBackend(recordPayload, jwtToken, apiBase = 'ht
  * @param {string} jwtToken - Backend auth token.
  * @returns {Promise<{cid: string, record: object}>}
  */
-export async function createRecord({
+async function createRecord({
     recordData, patientNip, patientId,
     recordType, documentHash,
     pinataApiKey, pinataSecretKey, jwtToken,
@@ -237,3 +237,6 @@ export async function createRecord({
 
     return { cid, record };
 }
+
+// Expose as global so non-module scripts can call window.NutriIPFS.*
+window.NutriIPFS = { uploadRecord, fetchRecord, saveRecordToBackend, createRecord };

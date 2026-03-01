@@ -292,9 +292,7 @@ document.addEventListener('DOMContentLoaded', async () => {
             initCmu();
         }
         if (route === 'records') {
-            if (window.nutriRecords) {
-                window.nutriRecords.init();
-            }
+            initRecords();
         }
         if (route === 'settings') {
             const form = document.getElementById('profile-form');
@@ -399,6 +397,33 @@ document.addEventListener('DOMContentLoaded', async () => {
                     msgDiv.style.display = 'block';
                     securityForm.reset();
                     setTimeout(() => { msgDiv.style.display = 'none'; }, 5000);
+                });
+            }
+
+            // Pinata IPFS Config
+            const pinataForm = document.getElementById('pinata-config-form');
+            if (pinataForm) {
+                // Pre-fill saved keys
+                const savedKey = localStorage.getItem('pinata_api_key');
+                const savedSecret = localStorage.getItem('pinata_secret_key');
+                if (savedKey) document.getElementById('pinata-api-key').value = savedKey;
+                if (savedSecret) document.getElementById('pinata-secret-key').value = savedSecret;
+
+                pinataForm.addEventListener('submit', (e) => {
+                    e.preventDefault();
+                    const key = document.getElementById('pinata-api-key').value.trim();
+                    const secret = document.getElementById('pinata-secret-key').value.trim();
+                    const msgDiv = document.getElementById('pinata-msg');
+                    if (key) localStorage.setItem('pinata_api_key', key);
+                    else localStorage.removeItem('pinata_api_key');
+                    if (secret) localStorage.setItem('pinata_secret_key', secret);
+                    else localStorage.removeItem('pinata_secret_key');
+                    msgDiv.innerHTML = key && secret
+                        ? "<i class='bx bx-check-circle'></i> Clés Pinata enregistrées. IPFS activé pour les dossiers."
+                        : "<i class='bx bx-info-circle'></i> Clés effacées. Les dossiers seront sauvegardés localement.";
+                    msgDiv.style.color = key && secret ? 'var(--color-green)' : 'var(--color-orange)';
+                    msgDiv.style.display = 'block';
+                    setTimeout(() => { msgDiv.style.display = 'none'; }, 4000);
                 });
             }
 
@@ -1001,4 +1026,149 @@ document.addEventListener('DOMContentLoaded', async () => {
 
         await loadVaccines();
     }
+
+    async function initRecords() {
+        const API = 'http://localhost:3000/api/records';
+        const token = window.nutriAuth?.token;
+        const user = window.nutriAuth?.user;
+        const form = document.getElementById('record-upload-form');
+        const listEl = document.getElementById('records-list');
+        const emptyEl = document.getElementById('records-empty');
+        const loadingEl = document.getElementById('records-loading');
+        const msgEl = document.getElementById('record-msg');
+        const ipfsStatusEl = document.getElementById('rec-ipfs-status');
+
+        // Show whether Pinata is configured
+        if (ipfsStatusEl) {
+            const hasIPFS = localStorage.getItem('pinata_api_key') && localStorage.getItem('pinata_secret_key');
+            ipfsStatusEl.innerHTML = hasIPFS
+                ? " <strong style='color:var(--color-green)'>IPFS actif</strong>"
+                : " Ajoutez vos clés Pinata dans les <a href='#settings' style='color:var(--color-orange)'>Paramètres</a> pour activer IPFS.";
+        }
+
+        const TYPE_ICONS = {
+            ORDONNANCE: 'bx-capsule',
+            'RÉSULTATS_EXAMEN': 'bx-test-tube',
+            CONSULTATION: 'bx-clinic',
+            VACCINATION: 'bx-injection',
+            AUTRE: 'bx-file'
+        };
+
+        function renderRecord(r) {
+            const el = document.createElement('div');
+            el.className = 'card glass';
+            const icon = TYPE_ICONS[r.record_type] || 'bx-file';
+            const date = r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—';
+            const hasCid = r.ipfs_cid && r.ipfs_cid !== 'PENDING';
+            const ipfsBadge = hasCid
+                ? `<a href="https://gateway.pinata.cloud/ipfs/${r.ipfs_cid}" target="_blank" class="text-sm" style="color:var(--color-green);word-break:break-all;"><i class='bx bx-link-external'></i> ${r.ipfs_cid.substring(0, 20)}…</a>`
+                : `<span class="text-sm text-muted"><i class='bx bx-server'></i> Stockage local</span>`;
+            el.innerHTML = `
+                <div class="card-body">
+                    <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;">
+                        <div style="flex:1;min-width:0;">
+                            <h4 style="margin:0;color:var(--color-orange);"><i class='bx ${icon}'></i> ${r.record_type.replace('_', ' ')}</h4>
+                            <div class="text-sm text-muted mt-1">ID: ${r.id.substring(0, 8)}… | ${date}</div>
+                            <div class="mt-1">${ipfsBadge}</div>
+                        </div>
+                        <div style="background:rgba(247,127,0,0.1);color:var(--color-orange);padding:4px 10px;border-radius:6px;font-size:0.75rem;font-weight:700;white-space:nowrap;flex-shrink:0;">
+                            ${r.record_type}
+                        </div>
+                    </div>
+                </div>`;
+            return el;
+        }
+
+        async function loadRecords() {
+            if (loadingEl) loadingEl.style.display = 'flex';
+            if (listEl) listEl.innerHTML = '';
+            try {
+                const res = await fetch(API, { headers: { 'Authorization': `Bearer ${token}` } });
+                const records = await res.json();
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (!records.length) {
+                    if (emptyEl) emptyEl.style.display = 'block';
+                    return;
+                }
+                if (emptyEl) emptyEl.style.display = 'none';
+                records.forEach(r => listEl.appendChild(renderRecord(r)));
+            } catch (err) {
+                if (loadingEl) loadingEl.style.display = 'none';
+                if (listEl) listEl.innerHTML = `<p class="text-sm text-muted text-center">${err.message}</p>`;
+            }
+        }
+
+        if (form) {
+            form.addEventListener('submit', async (e) => {
+                e.preventDefault();
+                const btn = document.getElementById('rec-submit-btn');
+                const recordType = document.getElementById('rec-type').value;
+                const content = document.getElementById('rec-content').value.trim();
+                if (!content) return;
+
+                const patientNip = user?.national_id;
+                const pinataKey = localStorage.getItem('pinata_api_key');
+                const pinataSecret = localStorage.getItem('pinata_secret_key');
+
+                btn.disabled = true;
+                btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Chiffrement en cours...";
+                if (msgEl) msgEl.style.display = 'none';
+
+                try {
+                    // SHA-256 hash of the plaintext content
+                    const encoded = new TextEncoder().encode(content);
+                    const hashBuffer = await window.crypto.subtle.digest('SHA-256', encoded);
+                    const documentHash = Array.from(new Uint8Array(hashBuffer))
+                        .map(b => b.toString(16).padStart(2, '0')).join('');
+
+                    if (patientNip && pinataKey && pinataSecret && window.NutriIPFS) {
+                        // Full pipeline: encrypt → IPFS → backend
+                        btn.innerHTML = "<i class='bx bx-loader-alt bx-spin'></i> Upload IPFS...";
+                        const result = await window.NutriIPFS.createRecord({
+                            recordData: { type: recordType, content, timestamp: new Date().toISOString() },
+                            patientNip,
+                            patientId: user.id,
+                            recordType,
+                            documentHash,
+                            pinataApiKey: pinataKey,
+                            pinataSecretKey: pinataSecret,
+                            jwtToken: token,
+                        });
+                        if (msgEl) {
+                            msgEl.innerHTML = `<i class='bx bx-check-circle'></i> Enregistré sur IPFS: <strong>${result.cid.substring(0, 20)}…</strong>`;
+                            msgEl.style.color = 'var(--color-green)';
+                            msgEl.style.display = 'block';
+                        }
+                    } else {
+                        // No Pinata — save to backend only with placeholder CID
+                        await window.NutriIPFS.saveRecordToBackend({
+                            record_type: recordType,
+                            ipfs_cid: 'PENDING',
+                            document_hash: documentHash,
+                        }, token);
+                        if (msgEl) {
+                            msgEl.innerHTML = `<i class='bx bx-info-circle'></i> Enregistré${patientNip ? '' : ' (NIP manquant)'}. Configurez Pinata dans les Paramètres pour activer IPFS.`;
+                            msgEl.style.color = 'var(--color-orange)';
+                            msgEl.style.display = 'block';
+                        }
+                    }
+                    form.reset();
+                    setTimeout(() => { if (msgEl) msgEl.style.display = 'none'; }, 5000);
+                    await loadRecords();
+                } catch (err) {
+                    if (msgEl) {
+                        msgEl.innerHTML = `<i class='bx bx-error-circle'></i> Erreur: ${err.message}`;
+                        msgEl.style.color = '#ef4444';
+                        msgEl.style.display = 'block';
+                    }
+                } finally {
+                    btn.disabled = false;
+                    btn.innerHTML = "<i class='bx bx-upload'></i> Chiffrer &amp; Enregistrer";
+                }
+            });
+        }
+
+        await loadRecords();
+    }
+
 });

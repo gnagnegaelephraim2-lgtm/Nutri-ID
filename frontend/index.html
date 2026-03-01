@@ -579,45 +579,70 @@
     <template id="tpl-records">
         <div class="page records-page animate-fade-in">
             <div class="page-header">
-                <h2><i class='bx bx-folder-open text-orange'></i> Dossiers Médicaux Blockchain</h2>
-                <p class="text-muted">Vos dossiers médicaux chiffrés, stockés sur IPFS et ancrés sur Polygon.</p>
+                <h2><i class='bx bx-folder-open text-orange'></i> Dossiers Médicaux</h2>
+                <p class="text-muted">Vos dossiers chiffrés AES-256, stockés sur IPFS et indexés dans votre profil.</p>
             </div>
 
-            <!-- Wallet Connect Bar -->
-            <div class="wallet-bar glass mb-3">
-                <div class="wallet-bar-left">
-                    <i class='bx bxs-wallet'></i>
-                    <span id="records-wallet-status" style="margin-left:0.5rem;">Non connecté</span>
+            <!-- Upload Form -->
+            <div class="card glass mb-4" style="max-width:640px;">
+                <div class="card-header">
+                    <h3><i class='bx bx-upload text-orange'></i> Nouveau Dossier</h3>
                 </div>
-                <button id="records-connect-btn" class="btn btn-primary btn-sm">
-                    <i class='bx bx-wallet-alt'></i> Connecter mon Portefeuille
-                </button>
+                <div class="card-body">
+                    <form id="record-upload-form">
+                        <div class="form-group mb-3">
+                            <label class="text-sm">Type de Document</label>
+                            <select id="rec-type" class="search-bar"
+                                style="width:100%;margin-top:0.5rem;background:var(--bg-color);" required>
+                                <option value="ORDONNANCE">Ordonnance</option>
+                                <option value="RÉSULTATS_EXAMEN">Résultats d'examen</option>
+                                <option value="CONSULTATION">Compte-rendu de consultation</option>
+                                <option value="VACCINATION">Attestation de vaccination</option>
+                                <option value="AUTRE">Autre</option>
+                            </select>
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="text-sm">Contenu / Description du dossier</label>
+                            <textarea id="rec-content" class="search-bar" rows="5"
+                                style="width:100%;margin-top:0.5rem;resize:vertical;font-family:inherit;"
+                                placeholder="Décrivez le document médical ou collez son contenu..." required></textarea>
+                        </div>
+                        <div class="text-sm text-muted mb-3"
+                            style="background:rgba(0,154,68,0.08);padding:0.75rem;border-radius:8px;border-left:3px solid var(--color-green);">
+                            <i class='bx bx-lock-alt'></i> Le contenu sera chiffré avec votre NIP avant tout envoi.
+                            <span id="rec-ipfs-status"></span>
+                        </div>
+                        <button type="submit" class="btn btn-primary" id="rec-submit-btn">
+                            <i class='bx bx-upload'></i> Chiffrer &amp; Enregistrer
+                        </button>
+                    </form>
+                    <div id="record-msg" class="mt-3 text-sm" style="display:none;"></div>
+                </div>
             </div>
 
             <!-- Loading State -->
             <div id="records-loading"
                 style="display:none;justify-content:center;align-items:center;gap:0.75rem;padding:2rem;">
                 <i class='bx bx-loader-alt bx-spin' style="font-size:2rem;color:#F77F00;"></i>
-                <span>Chargement des dossiers depuis la blockchain...</span>
+                <span>Chargement des dossiers...</span>
             </div>
 
             <!-- Empty / Error State -->
             <div id="records-empty" style="display:none;text-align:center;padding:3rem;opacity:0.7;">
                 <i class='bx bx-folder-open' style="font-size:3rem;"></i>
-                <p class="mt-2">Aucun dossier médical enregistré sur la blockchain.</p>
+                <p class="mt-2">Aucun dossier médical enregistré.</p>
             </div>
 
             <!-- Records List -->
-            <div id="records-list" class="records-grid">
-                <!-- Injected by web3.js HealthRecordManager -->
-            </div>
+            <div id="records-list" class="records-grid"></div>
 
             <!-- Info Footer -->
             <div class="card glass mt-4" style="max-width:600px;margin:1.5rem auto 0;">
                 <div class="card-body">
                     <h4><i class='bx bx-shield-quarter text-green'></i> Sécurité &amp; Confidentialité</h4>
-                    <p class="text-sm text-muted mt-1">Chaque dossier est chiffré, haché (SHA-256) et son CID IPFS est
-                        ancré sur la blockchain. Seuls vous et les médecins autorisés peuvent accéder au contenu.</p>
+                    <p class="text-sm text-muted mt-1">Chaque dossier est chiffré AES-256-GCM avec votre NIP, haché
+                        SHA-256, et son CID IPFS est indexé dans votre profil. Configurez Pinata dans les
+                        <strong>Paramètres</strong> pour activer le stockage IPFS décentralisé.</p>
                     <div class="id-row mt-2">
                         <div><i class='bx bx-lock-alt text-orange'></i> <span class="text-sm">Chiffrement E2E</span>
                         </div>
@@ -776,6 +801,34 @@
                             </label>
                         </div>
                     </div>
+                </div>
+            </div>
+
+            <!-- IPFS / PINATA CONFIG CARD -->
+            <div class="card glass mt-4" style="max-width: 600px; margin-left: auto; margin-right: auto;">
+                <div class="card-header">
+                    <h3><i class='bx bx-cloud-upload text-green'></i> Configuration IPFS (Pinata)</h3>
+                </div>
+                <div class="card-body">
+                    <p class="text-sm text-muted mb-3">Configurez vos clés Pinata pour activer le stockage chiffré sur
+                        IPFS. Les clés sont stockées <strong>localement dans votre navigateur</strong>, jamais sur nos
+                        serveurs.</p>
+                    <form id="pinata-config-form">
+                        <div class="form-group mb-2">
+                            <label class="text-sm">Pinata API Key</label>
+                            <input type="password" id="pinata-api-key" class="search-bar"
+                                style="width:100%;margin-top:0.5rem;" placeholder="Votre Pinata API Key...">
+                        </div>
+                        <div class="form-group mb-3">
+                            <label class="text-sm">Pinata Secret API Key</label>
+                            <input type="password" id="pinata-secret-key" class="search-bar"
+                                style="width:100%;margin-top:0.5rem;" placeholder="Votre Pinata Secret Key...">
+                        </div>
+                        <button type="submit" class="btn btn-secondary w-full">
+                            <i class='bx bx-save'></i> Enregistrer les clés Pinata
+                        </button>
+                    </form>
+                    <div id="pinata-msg" class="mt-2 text-sm text-center" style="display:none;"></div>
                 </div>
             </div>
 
@@ -1027,6 +1080,7 @@
     <script src="js/web3.js"></script>
     <script src="js/ai.js"></script>
     <script src="js/map.js"></script>
+    <script src="js/ipfs.js"></script>
     <script src="js/app.js"></script>
 </body>
 
