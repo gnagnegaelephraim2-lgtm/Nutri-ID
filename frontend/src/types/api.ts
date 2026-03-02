@@ -239,3 +239,18 @@ export interface FastingLogPayload {
   status: LogStatus;
   notes?: string | null;
 }
+
+// ─── Food Photo Analysis ──────────────────────────────────────────────────────
+
+export interface FoodAnalysisPayload {
+  image_base64: string;
+  mime_type: string;
+}
+
+export interface FoodAnalysisResult {
+  meal_name: string;
+  proteins: number;
+  carbs: number;
+  fats: number;
+  description: string;
+}

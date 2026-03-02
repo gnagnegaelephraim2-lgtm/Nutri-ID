@@ -68,9 +68,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
       >
         {/* Logo */}
         <div className="flex items-center gap-3 px-6 py-5 border-b border-[color:var(--glass-border)]">
-          <div className="flex h-9 w-9 items-center justify-center rounded-xl bg-ci-orange">
-            <Plus className="h-5 w-5 text-foreground" />
-          </div>
+          <img src="/logo.jpeg" alt="Nutri-ID Logo" className="h-10 w-auto rounded-lg object-contain" />
           <span className="font-heading text-xl font-bold text-foreground">Nutri-ID</span>
         </div>
 

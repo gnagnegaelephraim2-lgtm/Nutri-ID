@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CreditCard, Wallet, Search, Hexagon, Info } from 'lucide-react';
+import { CreditCard, Wallet, Search, Hexagon, Info, LogOut } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,10 +16,19 @@ import { NETWORKS } from '@/lib/web3';
 
 export default function HealthId() {
   const { user } = useAuth();
-  const { isConnected, userAddress, chainId, addresses, connect, isConnecting, error: web3Error } = useWeb3();
+  const { isConnected, userAddress, chainId, addresses, connect, disconnect, isConnecting, error: web3Error } = useWeb3();
   const [walletInput, setWalletInput] = useState(localStorage.getItem('health_id_wallet') || '');
   const [hasHealthId, setHasHealthId] = useState<boolean | null>(null);
   const [mintedTokenId, setMintedTokenId] = useState<number | null>(null);
+
+  function handleDisconnect() {
+    disconnect();
+    setHasHealthId(null);
+    setMintedTokenId(null);
+    localStorage.removeItem('health_id_wallet');
+    setWalletInput('');
+    toast.info('Portefeuille déconnecté');
+  }
 
   const name = user ? (user.full_name || user.email.split('@')[0]).toUpperCase() : '—';
   const nip = user?.national_id || '—';
@@ -77,7 +86,12 @@ export default function HealthId() {
               )}
               {!addresses && <Badge variant="secondary" className="text-xs">Mode Démo</Badge>}
             </div>
-            {!isConnected && (
+            {isConnected ? (
+              <Button size="sm" variant="outline" onClick={handleDisconnect} className="gap-2 text-red-400 border-red-400/30 hover:bg-red-400/10 hover:text-red-400">
+                <LogOut className="h-4 w-4" />
+                Déconnecter
+              </Button>
+            ) : (
               <Button size="sm" onClick={connect} disabled={isConnecting} className="gap-2">
                 <Wallet className="h-4 w-4" />
                 {isConnecting ? 'Connexion...' : 'Connecter mon Portefeuille'}

@@ -26,6 +26,8 @@ import type {
   FastingLog,
   FastingLogPayload,
   DoctorSummary,
+  FoodAnalysisPayload,
+  FoodAnalysisResult,
 } from '@/types/api';
 
 const BASE = (import.meta.env.VITE_API_URL as string) ?? '';
@@ -45,13 +47,14 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   if (!res.ok) {
     let errMsg = `HTTP ${res.status}`;
     try {
-      const errData = await res.json();
-      errMsg = errData.error || errData.message || errMsg;
-    } catch {
+      const text = await res.text();
       try {
-        errMsg = await res.text() || errMsg;
-      } catch { /* ignore */ }
-    }
+        const errData = JSON.parse(text);
+        errMsg = errData.error || errData.message || text || errMsg;
+      } catch {
+        errMsg = text || errMsg;
+      }
+    } catch { /* ignore */ }
     throw new Error(errMsg);
   }
 
@@ -135,6 +138,9 @@ export const api = {
   // ─── AI Chat ──────────────────────────────────────────────────────────────
   chat: (payload: AiChatPayload) =>
     request<AiChatResponse>('/api/ai/chat', { method: 'POST', body: JSON.stringify(payload) }),
+
+  analyzeFood: (payload: FoodAnalysisPayload) =>
+    request<FoodAnalysisResult>('/api/ai/analyze-food', { method: 'POST', body: JSON.stringify(payload) }),
 
   // ─── Doctor ───────────────────────────────────────────────────────────────
   getDoctors: () =>

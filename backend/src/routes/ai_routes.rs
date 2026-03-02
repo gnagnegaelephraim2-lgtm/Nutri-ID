@@ -1,11 +1,17 @@
 use crate::auth::Claims;
-use axum::{extract::State, http::StatusCode, routing::post, Json, Router};
+use axum::{extract::{DefaultBodyLimit, State}, http::StatusCode, routing::post, Json, Router};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use std::env;
 
 pub fn router() -> Router<SqlitePool> {
-    Router::new().route("/chat", post(chat_handler))
+    Router::new()
+        .route("/chat", post(chat_handler))
+        .route(
+            "/analyze-food",
+            post(analyze_food_handler)
+                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)), // 10 MB for base64 images
+        )
 }
 
 #[derive(Deserialize, Debug)]
@@ -27,7 +33,7 @@ pub struct ChatRequest {
 
 #[derive(Serialize)]
 pub struct ChatResponse {
-    reply: String,
+    response: String,
 }
 
 async fn chat_handler(
@@ -214,10 +220,134 @@ async fn chat_handler(
     })?;
 
     // Extract text from: { "candidates": [ { "content": { "parts": [ { "text": "..." } ] } } ] }
-    let reply = raw_json["candidates"][0]["content"]["parts"][0]["text"]
+    let response = raw_json["candidates"][0]["content"]["parts"][0]["text"]
         .as_str()
         .unwrap_or("Désolé, je n'ai pas pu générer de réponse.")
         .to_string();
 
-    Ok(Json(ChatResponse { reply }))
+    Ok(Json(ChatResponse { response }))
+}
+
+// ─── Food Photo Analysis ──────────────────────────────────────────────────────
+
+#[derive(Deserialize)]
+struct FoodImageRequest {
+    image_base64: String,
+    mime_type: String,
+}
+
+#[derive(Deserialize, Serialize)]
+struct FoodAnalysis {
+    meal_name: String,
+    proteins: f64,
+    carbs: f64,
+    fats: f64,
+    description: String,
+}
+
+async fn analyze_food_handler(
+    _claims: Claims,
+    Json(payload): Json<FoodImageRequest>,
+) -> Result<Json<FoodAnalysis>, (StatusCode, String)> {
+    let api_key = env::var("GEMINI_API_KEY").map_err(|_| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "GEMINI_API_KEY non configurée".into(),
+        )
+    })?;
+
+    let client = reqwest::Client::new();
+    let url = format!(
+        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}",
+        api_key
+    );
+
+    let prompt_text = "Analyse cette image de nourriture. Identifie le plat (nom en français, \
+        nom ivoirien local si applicable: Garba, Attiéké, Foutou, Alloco, etc.). \
+        Estime les valeurs nutritionnelles pour une portion standard. \
+        Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication: \
+        {\"meal_name\": \"...\", \"proteins\": <number>, \"carbs\": <number>, \"fats\": <number>, \"description\": \"...\"}";
+
+    let gemini_req = serde_json::json!({
+        "contents": [{
+            "parts": [
+                {
+                    "inline_data": {
+                        "mime_type": payload.mime_type,
+                        "data": payload.image_base64
+                    }
+                },
+                { "text": prompt_text }
+            ]
+        }],
+        "generationConfig": {
+            "temperature": 0.1,
+            "maxOutputTokens": 800,
+            "responseMimeType": "application/json"
+        }
+    });
+
+    let res = client
+        .post(&url)
+        .json(&gemini_req)
+        .send()
+        .await
+        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Erreur réseau Gemini: {}", e)))?;
+
+    if !res.status().is_success() {
+        let err_text = res.text().await.unwrap_or_default();
+        tracing::error!("Gemini analyze-food Error: {}", err_text);
+        return Err((
+            StatusCode::BAD_GATEWAY,
+            format!("Erreur API Gemini: {}", err_text),
+        ));
+    }
+
+    let raw_json: serde_json::Value = res.json().await.map_err(|e| {
+        (
+            StatusCode::INTERNAL_SERVER_ERROR,
+            format!("Erreur parsing réponse Gemini: {}", e),
+        )
+    })?;
+
+    let text = raw_json["candidates"][0]["content"]["parts"][0]["text"]
+        .as_str()
+        .unwrap_or("")
+        .to_string();
+
+    tracing::info!("📸 Raw Gemini analyze-food response: {}", text);
+
+    // Strip possible markdown fences
+    let cleaned = text
+        .trim()
+        .trim_start_matches("```json")
+        .trim_start_matches("```")
+        .trim_end_matches("```")
+        .trim()
+        .to_string();
+
+    // Robustly extract the JSON object: find first '{' and last '}'
+    // This handles markdown fences, leading/trailing text, and any whitespace.
+    let json_start = cleaned.find('{').ok_or_else(|| {
+        (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("Aucun JSON trouvé dans la réponse IA. Réponse brute: {}", text),
+        )
+    })?;
+    let json_end = cleaned.rfind('}').ok_or_else(|| {
+        (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("JSON incomplet dans la réponse IA. Réponse brute: {}", text),
+        )
+    })?;
+    let json_str = &text[json_start..=json_end];
+
+    let analysis: FoodAnalysis = serde_json::from_str(json_str).map_err(|e| {
+        (
+            StatusCode::UNPROCESSABLE_ENTITY,
+            format!("Impossible de parser la réponse IA: {}. JSON extrait: {}", e, json_str),
+        )
+    })?;
+
+    Ok(Json(analysis))
 }

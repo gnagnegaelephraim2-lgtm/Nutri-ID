@@ -13,7 +13,7 @@ const translations: TranslationsMap = {
     'nav.records': 'Dossiers',
     'nav.vaccines': 'Vaccins',
     'nav.find_care': 'Trouver un soin',
-    'nav.nutrition': 'Nutri-ID',
+    'nav.nutrition': 'Nutrition',
     'nav.teleconsult': 'Téléconsultation',
     'nav.cmu': 'Couverture CMU',
     'nav.fasting': 'Jeûne & Spiritualité',
@@ -41,7 +41,7 @@ const translations: TranslationsMap = {
     'nav.records': 'Sɛbɛnw',
     'nav.vaccines': 'Pikiriw',
     'nav.find_care': 'Furakɛyɔrɔ ɲini',
-    'nav.nutrition': 'Nutri-ID',
+    'nav.nutrition': 'Nutrition',
     'nav.teleconsult': 'Tele-Furakɛli',
     'nav.cmu': 'CMU Sɔrɔ',
     'nav.fasting': 'Tɔɔrɔ',
@@ -68,7 +68,7 @@ const translations: TranslationsMap = {
     'nav.records': 'Flouwa',
     'nav.vaccines': 'Pinvi',
     'nav.find_care': 'Sikplé klo',
-    'nav.nutrition': 'Nutri-ID',
+    'nav.nutrition': 'Nutrition',
     'nav.teleconsult': 'Wlɛlɛ nzɛn',
     'nav.cmu': 'CMU Sran',
     'nav.fasting': 'Asɔlɛ',
@@ -95,7 +95,7 @@ const translations: TranslationsMap = {
     'nav.records': 'Gba sɛbɛ',
     'nav.vaccines': 'Pikiri bɔ',
     'nav.find_care': 'Fura sɔ',
-    'nav.nutrition': 'Nutri-ID',
+    'nav.nutrition': 'Nutrition',
     'nav.teleconsult': 'Wɛ kɔ dɔ',
     'nav.cmu': 'CMU Nɔ',
     'nav.fasting': 'Gba kpɛ',
@@ -122,7 +122,7 @@ const translations: TranslationsMap = {
     'nav.records': 'Sɛbɛ wie',
     'nav.vaccines': 'Piki bɔ',
     'nav.find_care': 'Dua fura',
-    'nav.nutrition': 'Nutri-ID',
+    'nav.nutrition': 'Nutrition',
     'nav.teleconsult': 'Kasa kɔ',
     'nav.cmu': 'CMU Su',
     'nav.fasting': 'Asɛ wie',
@@ -152,7 +152,7 @@ interface I18nContextValue {
 
 const I18nContext = createContext<I18nContextValue>({
   lang: 'fr',
-  setLang: () => {},
+  setLang: () => { },
   t: (k) => k,
 });
 

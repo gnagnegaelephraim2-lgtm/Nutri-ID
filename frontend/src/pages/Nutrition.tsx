@@ -1,9 +1,10 @@
+import { useState, useRef } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { toast } from 'sonner';
-import { Save, UtensilsCrossed, BarChart3, Brain } from 'lucide-react';
+import { Save, UtensilsCrossed, BarChart3, Brain, Camera, ImageIcon, Sparkles } from 'lucide-react';
 import {
   RadarChart, PolarGrid, PolarAngleAxis, Radar, ResponsiveContainer, Tooltip
 } from 'recharts';
@@ -94,12 +95,55 @@ function TodaySummary({ logs }: { logs: NutritionLog[] }) {
 export default function Nutrition() {
   const qc = useQueryClient();
   const { data: logs, isLoading } = useQuery({ queryKey: ['nutrition'], queryFn: api.getNutrition });
-  const { register, handleSubmit, watch, reset, formState: { errors } } = useForm<MealForm>({
+  const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<MealForm>({
     resolver: zodResolver(mealSchema),
     defaultValues: { proteins: 0, carbs: 0, fats: 0 },
   });
   const [p, c, f] = [watch('proteins') || 0, watch('carbs') || 0, watch('fats') || 0];
   const preview = calcKcal(Number(p), Number(c), Number(f));
+
+  // Photo analysis state
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [imageBase64, setImageBase64] = useState<string | null>(null);
+  const [mimeType, setMimeType] = useState('image/jpeg');
+  const fileInputRef = useRef<HTMLInputElement>(null);
+  const cameraInputRef = useRef<HTMLInputElement>(null);
+
+  function handleFile(file: File) {
+    const reader = new FileReader();
+    reader.onload = (ev) => {
+      const img = new Image();
+      img.onload = () => {
+        // Resize to max 1024px on longest side, encode as JPEG 0.82
+        const MAX = 1024;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        const dataUrl = canvas.toDataURL('image/jpeg', 0.82);
+        setImagePreview(dataUrl);
+        setImageBase64(dataUrl.split(',')[1]);
+        setMimeType('image/jpeg');
+      };
+      img.src = ev.target?.result as string;
+    };
+    reader.readAsDataURL(file);
+  }
+
+  const analyzeMutation = useMutation({
+    mutationFn: () => api.analyzeFood({ image_base64: imageBase64!, mime_type: mimeType }),
+    onSuccess: (result) => {
+      setValue('meal_name', result.meal_name);
+      setValue('proteins', result.proteins);
+      setValue('carbs', result.carbs);
+      setValue('fats', result.fats);
+      toast.success(`Repas détecté : ${result.meal_name}`);
+      setImagePreview(null);
+      setImageBase64(null);
+    },
+    onError: (err: Error) => toast.error(`Analyse échouée : ${err.message}`),
+  });
 
   const mutation = useMutation({
     mutationFn: api.postNutrition,
@@ -123,6 +167,59 @@ export default function Nutrition() {
           </h1>
           <p className="text-sm text-muted-foreground">Suivi nutritionnel localisé pour la Côte d&apos;Ivoire.</p>
         </div>
+
+        {/* Photo analysis card */}
+        <Card className="border-ci-orange/30">
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center gap-2 text-base">
+              <Camera className="h-4 w-4 text-ci-orange" /> Analyser une photo de repas
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+            />
+            <input
+              ref={cameraInputRef}
+              type="file"
+              accept="image/*"
+              capture="environment"
+              className="hidden"
+              onChange={(e) => { const f = e.target.files?.[0]; if (f) handleFile(f); e.target.value = ''; }}
+            />
+            <div className="flex flex-col sm:flex-row gap-3 items-start">
+              <div className="flex gap-2">
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => cameraInputRef.current?.click()}>
+                  <Camera className="h-4 w-4" /> Prendre une photo
+                </Button>
+                <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
+                  <ImageIcon className="h-4 w-4" /> Depuis la galerie
+                </Button>
+              </div>
+              {imagePreview && (
+                <div className="flex items-center gap-3">
+                  <img src={imagePreview} alt="Aperçu" className="h-20 w-28 object-cover rounded-lg border border-[color:var(--glass-border)]" />
+                  <Button
+                    size="sm"
+                    className="gap-2 bg-ci-orange hover:bg-ci-orange/90"
+                    disabled={analyzeMutation.isPending}
+                    onClick={() => analyzeMutation.mutate()}
+                  >
+                    <Sparkles className="h-4 w-4" />
+                    {analyzeMutation.isPending ? 'Analyse...' : 'Analyser avec l\'IA'}
+                  </Button>
+                </div>
+              )}
+            </div>
+            {!imagePreview && (
+              <p className="text-xs text-muted-foreground mt-2">Les macros seront pré-remplies automatiquement dans le formulaire.</p>
+            )}
+          </CardContent>
+        </Card>
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form */}

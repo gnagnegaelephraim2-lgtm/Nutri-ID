@@ -1,4 +1,5 @@
-import { useState, useMemo } from 'react';
+import { useState, useMemo, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { MapPin, Search, Filter, X } from 'lucide-react';
 import { MapContainer, TileLayer, Marker, Popup } from 'react-leaflet';
 import L from 'leaflet';
@@ -71,9 +72,27 @@ const TYPE_GROUPS: Record<string, string[]> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FindCare() {
-  const [search, setSearch] = useState('');
+  const [searchParams, setSearchParams] = useSearchParams();
+  const [search, setSearchState] = useState(searchParams.get('q') || '');
   const [filterGroup, setFilterGroup] = useState('all');
   const [filterRegion, setFilterRegion] = useState('all');
+
+  // Sync state if URL changes
+  useEffect(() => {
+    const q = searchParams.get('q') || '';
+    if (q !== search) {
+      setSearchState(q);
+    }
+  }, [searchParams]);
+
+  const setSearch = (val: string) => {
+    setSearchState(val);
+    setSearchParams(prev => {
+      if (val) prev.set('q', val);
+      else prev.delete('q');
+      return prev;
+    }, { replace: true });
+  };
 
   const filtered = useMemo(() => {
     const groupTypes = filterGroup !== 'all' ? TYPE_GROUPS[filterGroup] : null;
@@ -227,8 +246,8 @@ export default function FindCare() {
                 key={group}
                 onClick={() => setFilterGroup(filterGroup === group ? 'all' : group)}
                 className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterGroup === group
-                    ? 'bg-ci-orange/20 text-ci-orange border-ci-orange/30'
-                    : 'border-[color:var(--glass-border)] text-muted-foreground hover:text-foreground'
+                  ? 'bg-ci-orange/20 text-ci-orange border-ci-orange/30'
+                  : 'border-[color:var(--glass-border)] text-muted-foreground hover:text-foreground'
                   }`}
               >
                 {group} <span className="font-medium">({count})</span>
