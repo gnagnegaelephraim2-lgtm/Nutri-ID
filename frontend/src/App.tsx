@@ -25,7 +25,7 @@ function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
   return (
-    <div className="relative flex h-screen overflow-hidden">
+    <div className="relative flex h-screen overflow-hidden bg-background">
       {/* Decorative background orbs */}
       <div className="glow-1 pointer-events-none" />
       <div className="glow-2 pointer-events-none" />

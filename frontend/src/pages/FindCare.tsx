@@ -130,9 +130,9 @@ export default function FindCare() {
             onChange={e => setFilterGroup(e.target.value)}
             className="h-9 rounded-md border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] text-foreground text-xs px-2 cursor-pointer"
           >
-            <option value="all">Tous types</option>
+            <option value="all" className="bg-background text-foreground">Tous types</option>
             {Object.keys(TYPE_GROUPS).map(g => (
-              <option key={g} value={g}>{g}</option>
+              <option key={g} value={g} className="bg-background text-foreground">{g}</option>
             ))}
           </select>
 
@@ -142,9 +142,9 @@ export default function FindCare() {
             onChange={e => setFilterRegion(e.target.value)}
             className="h-9 rounded-md border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] text-foreground text-xs px-2 cursor-pointer"
           >
-            <option value="all">Toutes régions</option>
+            <option value="all" className="bg-background text-foreground">Toutes régions</option>
             {ALL_REGIONS.map(r => (
-              <option key={r} value={r}>{r}</option>
+              <option key={r} value={r} className="bg-background text-foreground">{r}</option>
             ))}
           </select>
 
@@ -226,11 +226,10 @@ export default function FindCare() {
               <button
                 key={group}
                 onClick={() => setFilterGroup(filterGroup === group ? 'all' : group)}
-                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${
-                  filterGroup === group
+                className={`text-xs px-2.5 py-1 rounded-full border transition-colors ${filterGroup === group
                     ? 'bg-ci-orange/20 text-ci-orange border-ci-orange/30'
                     : 'border-[color:var(--glass-border)] text-muted-foreground hover:text-foreground'
-                }`}
+                  }`}
               >
                 {group} <span className="font-medium">({count})</span>
               </button>

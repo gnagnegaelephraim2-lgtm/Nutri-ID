@@ -9,25 +9,25 @@ import { useI18n } from '@/hooks/useI18n';
 import { cn } from '@/lib/utils';
 
 const patientNavItems = [
-  { to: '/',           icon: Home,            i18nKey: 'nav.home' },
-  { to: '/dashboard',  icon: LayoutDashboard, i18nKey: 'nav.dashboard' },
-  { to: '/health-id',  icon: CreditCard,      i18nKey: 'nav.health_id' },
-  { to: '/records',    icon: FolderOpen,      i18nKey: 'nav.records' },
-  { to: '/vaccines',   icon: ShieldPlus,      i18nKey: 'nav.vaccines' },
-  { to: '/find-care',  icon: MapPin,          i18nKey: 'nav.find_care' },
-  { to: '/nutrition',  icon: UtensilsCrossed, i18nKey: 'nav.nutrition' },
-  { to: '/teleconsult',icon: Video,           i18nKey: 'nav.teleconsult' },
-  { to: '/cmu',        icon: ShieldCheck,     i18nKey: 'nav.cmu' },
-  { to: '/fasting',    icon: CalendarHeart,   i18nKey: 'nav.fasting' },
-  { to: '/settings',   icon: Settings,        i18nKey: 'nav.settings' },
+  { to: '/', icon: Home, i18nKey: 'nav.home' },
+  { to: '/dashboard', icon: LayoutDashboard, i18nKey: 'nav.dashboard' },
+  { to: '/health-id', icon: CreditCard, i18nKey: 'nav.health_id' },
+  { to: '/records', icon: FolderOpen, i18nKey: 'nav.records' },
+  { to: '/vaccines', icon: ShieldPlus, i18nKey: 'nav.vaccines' },
+  { to: '/find-care', icon: MapPin, i18nKey: 'nav.find_care' },
+  { to: '/nutrition', icon: UtensilsCrossed, i18nKey: 'nav.nutrition' },
+  { to: '/teleconsult', icon: Video, i18nKey: 'nav.teleconsult' },
+  { to: '/cmu', icon: ShieldCheck, i18nKey: 'nav.cmu' },
+  { to: '/fasting', icon: CalendarHeart, i18nKey: 'nav.fasting' },
+  { to: '/settings', icon: Settings, i18nKey: 'nav.settings' },
 ];
 
 const doctorNavItems = [
-  { to: '/',           icon: Home,            i18nKey: 'nav.home' },
-  { to: '/doctor',     icon: Stethoscope,     i18nKey: 'nav.doctor_dashboard' },
-  { to: '/teleconsult',icon: Video,           i18nKey: 'nav.teleconsult' },
-  { to: '/find-care',  icon: MapPin,          i18nKey: 'nav.find_care' },
-  { to: '/settings',   icon: Settings,        i18nKey: 'nav.settings' },
+  { to: '/', icon: Home, i18nKey: 'nav.home' },
+  { to: '/doctor', icon: Stethoscope, i18nKey: 'nav.doctor_dashboard' },
+  { to: '/teleconsult', icon: Video, i18nKey: 'nav.teleconsult' },
+  { to: '/find-care', icon: MapPin, i18nKey: 'nav.find_care' },
+  { to: '/settings', icon: Settings, i18nKey: 'nav.settings' },
 ];
 
 interface SidebarProps {
