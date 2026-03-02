@@ -84,10 +84,10 @@ async fn get_doctor_teleconsults_handler(
     let doctor_id_str = claims.sub.to_string();
     let consults = sqlx::query_as::<_, TeleconsultationWithPatient>(
         r#"
-        SELECT t.id, t.patient_id, u.full_name AS patient_name, t.doctor_id,
+        SELECT t.id, t.patient_id, p.full_name AS patient_name, t.doctor_id,
                t.scheduled_at, t.status, t.meeting_link, t.notes, t.created_at, t.updated_at
         FROM teleconsultations t
-        LEFT JOIN users u ON t.patient_id = u.id
+        LEFT JOIN patients p ON t.patient_id = p.user_id
         WHERE t.doctor_id = ?
         ORDER BY t.scheduled_at ASC
         "#,
@@ -162,10 +162,10 @@ async fn update_doctor_teleconsult_status_handler(
     // Fetch updated row with patient name via JOIN
     let consult = sqlx::query_as::<_, TeleconsultationWithPatient>(
         r#"
-        SELECT t.id, t.patient_id, u.full_name AS patient_name, t.doctor_id,
+        SELECT t.id, t.patient_id, p.full_name AS patient_name, t.doctor_id,
                t.scheduled_at, t.status, t.meeting_link, t.notes, t.created_at, t.updated_at
         FROM teleconsultations t
-        LEFT JOIN users u ON t.patient_id = u.id
+        LEFT JOIN patients p ON t.patient_id = p.user_id
         WHERE t.id = ?
         "#,
     )

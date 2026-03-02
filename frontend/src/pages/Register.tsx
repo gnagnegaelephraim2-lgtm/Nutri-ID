@@ -14,7 +14,7 @@ import { useAuth } from '@/hooks/useAuth';
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Nom requis'),
   email: z.string().email('Email invalide'),
-  password: z.string().min(6, '6 caractères minimum'),
+  password: z.string().min(8, '8 caractères minimum'),
   blood_type: z.string().min(1, 'Groupe sanguin requis'),
   national_id: z.string().optional(),
 });

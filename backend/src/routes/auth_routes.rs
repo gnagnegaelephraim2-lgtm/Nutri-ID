@@ -73,11 +73,14 @@ async fn me_handler(
     let id_str = claims.sub.to_string();
     let row = sqlx::query(
         r#"
-        SELECT u.id, u.email, u.role, p.full_name, p.national_id, p.blood_type,
+        SELECT u.id, u.email, u.role,
+               COALESCE(p.full_name, d.full_name) AS full_name,
+               p.national_id, p.blood_type,
                p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact,
                p.cmu_active, p.cmu_expiry_date, p.religion
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
+        LEFT JOIN doctors d ON u.id = d.user_id
         WHERE u.id = ?
         "#,
     )
@@ -136,8 +139,15 @@ async fn update_me_handler(
 
     // We only update if the fields are provided.
     if let Some(name) = payload.full_name {
+        // Update both tables — one will match (patient or doctor), the other is a no-op.
         sqlx::query("UPDATE patients SET full_name = ? WHERE user_id = ?")
-            .bind(name)
+            .bind(&name)
+            .bind(&id_str)
+            .execute(&mut *tx)
+            .await
+            .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+        sqlx::query("UPDATE doctors SET full_name = ? WHERE user_id = ?")
+            .bind(&name)
             .bind(&id_str)
             .execute(&mut *tx)
             .await
@@ -238,11 +248,14 @@ async fn update_me_handler(
     // Return the updated profile so the client can refresh state without an extra round-trip
     let row = sqlx::query(
         r#"
-        SELECT u.id, u.email, u.role, p.full_name, p.national_id, p.blood_type,
+        SELECT u.id, u.email, u.role,
+               COALESCE(p.full_name, d.full_name) AS full_name,
+               p.national_id, p.blood_type,
                p.date_of_birth, p.sex, p.height, p.weight, p.allergies, p.emergency_contact,
                p.cmu_active, p.cmu_expiry_date, p.religion
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
+        LEFT JOIN doctors d ON u.id = d.user_id
         WHERE u.id = ?
         "#,
     )
