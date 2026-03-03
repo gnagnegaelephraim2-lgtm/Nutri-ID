@@ -1,0 +1,15 @@
+# =============================================================================
+# Railway — Nutri-ID Backend Deployment Config
+# =============================================================================
+
+[build]
+  builder        = "dockerfile"
+  dockerfilePath = "./Dockerfile"
+
+[deploy]
+  # Health check — Railway waits for this to return 200 before routing traffic
+  healthcheckPath    = "/api/health"
+  healthcheckTimeout = 300
+
+  restartPolicyType       = "on_failure"
+  restartPolicyMaxRetries = 3
