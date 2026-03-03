@@ -10,6 +10,7 @@ FROM rust:slim-bookworm AS builder
 #   ca-certificates — TLS root certs
 RUN apt-get update && apt-get install -y \
     pkg-config \
+    build-essential \
     libssl-dev \
     libsqlite3-dev \
     ca-certificates \
