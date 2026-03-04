@@ -25,5 +25,3 @@ pub fn app_router() -> Router<SqlitePool> {
         .nest("/api/fasting", fasting_routes::router())
         .nest("/api/doctor", doctor_routes::router())
 }
-
-

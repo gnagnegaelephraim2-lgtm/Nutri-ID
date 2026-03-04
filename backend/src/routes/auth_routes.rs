@@ -356,7 +356,10 @@ async fn register_handler(
         return Err(api_err(StatusCode::BAD_REQUEST, "Adresse email invalide"));
     }
     if payload.password.len() < 8 {
-        return Err(api_err(StatusCode::BAD_REQUEST, "Le mot de passe doit contenir au moins 8 caractères"));
+        return Err(api_err(
+            StatusCode::BAD_REQUEST,
+            "Le mot de passe doit contenir au moins 8 caractères",
+        ));
     }
 
     let role = payload.role.unwrap_or_else(|| "PATIENT".to_string());
@@ -562,15 +565,13 @@ async fn forgot_password_handler(
         .await
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    sqlx::query(
-        "INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)",
-    )
-    .bind(&token)
-    .bind(&user_id)
-    .bind(&expires_at)
-    .execute(&pool)
-    .await
-    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
+    sqlx::query("INSERT INTO password_reset_tokens (token, user_id, expires_at) VALUES (?, ?, ?)")
+        .bind(&token)
+        .bind(&user_id)
+        .bind(&expires_at)
+        .execute(&pool)
+        .await
+        .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
     tracing::info!("Password reset token for {}: {}", payload.email, token);
 
@@ -600,14 +601,18 @@ async fn reset_password_handler(
         ));
     }
 
-    let row = sqlx::query(
-        "SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?",
-    )
-    .bind(&payload.token)
-    .fetch_optional(&pool)
-    .await
-    .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?
-    .ok_or_else(|| api_err(StatusCode::BAD_REQUEST, "Lien de réinitialisation invalide."))?;
+    let row =
+        sqlx::query("SELECT user_id, expires_at, used FROM password_reset_tokens WHERE token = ?")
+            .bind(&payload.token)
+            .fetch_optional(&pool)
+            .await
+            .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?
+            .ok_or_else(|| {
+                api_err(
+                    StatusCode::BAD_REQUEST,
+                    "Lien de réinitialisation invalide.",
+                )
+            })?;
 
     let used: i64 = row
         .try_get("used")
@@ -623,8 +628,12 @@ async fn reset_password_handler(
         .try_get("expires_at")
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    let expires_at = chrono::DateTime::parse_from_rfc3339(&expires_at_str)
-        .map_err(|_| api_err(StatusCode::INTERNAL_SERVER_ERROR, "Invalid token expiry format"))?;
+    let expires_at = chrono::DateTime::parse_from_rfc3339(&expires_at_str).map_err(|_| {
+        api_err(
+            StatusCode::INTERNAL_SERVER_ERROR,
+            "Invalid token expiry format",
+        )
+    })?;
 
     if chrono::Utc::now() > expires_at {
         return Err(api_err(

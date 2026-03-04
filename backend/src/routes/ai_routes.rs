@@ -1,17 +1,19 @@
 use crate::auth::Claims;
-use axum::{extract::{DefaultBodyLimit, State}, http::StatusCode, routing::post, Json, Router};
+use axum::{
+    extract::{DefaultBodyLimit, State},
+    http::StatusCode,
+    routing::post,
+    Json, Router,
+};
 use serde::{Deserialize, Serialize};
 use sqlx::{Row, SqlitePool};
 use std::env;
 
 pub fn router() -> Router<SqlitePool> {
-    Router::new()
-        .route("/chat", post(chat_handler))
-        .route(
-            "/analyze-food",
-            post(analyze_food_handler)
-                .layer(DefaultBodyLimit::max(10 * 1024 * 1024)), // 10 MB for base64 images
-        )
+    Router::new().route("/chat", post(chat_handler)).route(
+        "/analyze-food",
+        post(analyze_food_handler).layer(DefaultBodyLimit::max(10 * 1024 * 1024)), // 10 MB for base64 images
+    )
 }
 
 #[derive(Deserialize, Debug)]
@@ -292,7 +294,12 @@ async fn analyze_food_handler(
         .json(&gemini_req)
         .send()
         .await
-        .map_err(|e| (StatusCode::BAD_GATEWAY, format!("Erreur réseau Gemini: {}", e)))?;
+        .map_err(|e| {
+            (
+                StatusCode::BAD_GATEWAY,
+                format!("Erreur réseau Gemini: {}", e),
+            )
+        })?;
 
     if !res.status().is_success() {
         let err_text = res.text().await.unwrap_or_default();
@@ -331,7 +338,10 @@ async fn analyze_food_handler(
     let json_start = cleaned.find('{').ok_or_else(|| {
         (
             StatusCode::UNPROCESSABLE_ENTITY,
-            format!("Aucun JSON trouvé dans la réponse IA. Réponse brute: {}", text),
+            format!(
+                "Aucun JSON trouvé dans la réponse IA. Réponse brute: {}",
+                text
+            ),
         )
     })?;
     let json_end = cleaned.rfind('}').ok_or_else(|| {
@@ -345,7 +355,10 @@ async fn analyze_food_handler(
     let analysis: FoodAnalysis = serde_json::from_str(json_str).map_err(|e| {
         (
             StatusCode::UNPROCESSABLE_ENTITY,
-            format!("Impossible de parser la réponse IA: {}. JSON extrait: {}", e, json_str),
+            format!(
+                "Impossible de parser la réponse IA: {}. JSON extrait: {}",
+                e, json_str
+            ),
         )
     })?;
 

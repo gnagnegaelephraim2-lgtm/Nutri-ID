@@ -9,9 +9,7 @@ use uuid::Uuid;
 
 use crate::{
     auth::Claims,
-    models::fasting::{
-        CreateFastingPlanPayload, FastingLog, FastingPlan, UpdateFastingLogPayload,
-    },
+    models::fasting::{CreateFastingPlanPayload, FastingLog, FastingPlan, UpdateFastingLogPayload},
 };
 use serde_json::json;
 
@@ -97,7 +95,7 @@ async fn update_fasting_log_handler(
 
     // Verify ownership of the plan
     let plan_exists = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM fasting_plans WHERE id = ? AND user_id = ?"
+        "SELECT COUNT(*) FROM fasting_plans WHERE id = ? AND user_id = ?",
     )
     .bind(&plan_id)
     .bind(&user_id_str)
@@ -152,7 +150,7 @@ async fn get_fasting_logs_handler(
 
     // Verify ownership
     let plan_exists = sqlx::query_scalar::<_, i64>(
-        "SELECT COUNT(*) FROM fasting_plans WHERE id = ? AND user_id = ?"
+        "SELECT COUNT(*) FROM fasting_plans WHERE id = ? AND user_id = ?",
     )
     .bind(&plan_id)
     .bind(&user_id_str)

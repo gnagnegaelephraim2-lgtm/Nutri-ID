@@ -4,9 +4,9 @@ use axum::{
     routing::get,
     Json, Router,
 };
-use sqlx::{Row, SqlitePool};
 use serde::{Deserialize, Serialize};
 use serde_json::json;
+use sqlx::{Row, SqlitePool};
 
 use crate::{
     auth::Claims,
@@ -15,8 +15,7 @@ use crate::{
 
 pub fn router() -> Router<SqlitePool> {
     // Public: list doctors for teleconsult booking (no auth required)
-    let public = Router::new()
-        .route("/list", get(list_doctors_handler));
+    let public = Router::new().route("/list", get(list_doctors_handler));
 
     // Protected: doctor-scoped teleconsult management
     let protected = Router::new()
@@ -123,7 +122,9 @@ async fn update_doctor_teleconsult_status_handler(
     if !valid_statuses.contains(&payload.status.as_str()) {
         return Err((
             StatusCode::BAD_REQUEST,
-            Json(json!({ "error": "Statut invalide. Valeurs acceptées: confirmed, completed, canceled" })),
+            Json(
+                json!({ "error": "Statut invalide. Valeurs acceptées: confirmed, completed, canceled" }),
+            ),
         ));
     }
 
