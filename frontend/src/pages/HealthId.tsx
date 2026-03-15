@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useMutation } from '@tanstack/react-query';
 import { toast } from 'sonner';
-import { CreditCard, Wallet, Search, Hexagon, Info, LogOut } from 'lucide-react';
+import { CreditCard, Wallet, Search, Hexagon, Info, LogOut, Printer, ExternalLink } from 'lucide-react';
 import { QRCodeSVG } from 'qrcode.react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -39,8 +39,12 @@ export default function HealthId() {
     onSuccess: (data) => {
       localStorage.setItem('health_id_wallet', walletInput.trim());
       setHasHealthId(data.has_health_id);
-      if (data.has_health_id) toast.success('SBT ID Santé détecté !');
-      else toast.info('Aucun SBT trouvé. Vous pouvez en minter un.');
+      if (data.has_health_id) {
+        if (data.token_id != null) setMintedTokenId(data.token_id);
+        toast.success('SBT ID Santé détecté !');
+      } else {
+        toast.info('Aucun SBT trouvé. Vous pouvez en minter un.');
+      }
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -156,11 +160,22 @@ export default function HealthId() {
                   : 'Aucun SBT trouvé pour cette adresse. Vous pouvez minter votre ID Santé.'}
               </div>
             )}
+            {hasHealthId && mintedTokenId != null && walletInput && (
+              <a
+                href={`https://polygonscan.com/address/${walletInput.trim()}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1.5 text-sm text-polygon hover:underline"
+              >
+                <ExternalLink className="h-3.5 w-3.5" />
+                Voir sur PolygonScan
+              </a>
+            )}
           </CardContent>
         </Card>
 
         {/* Health ID card */}
-        <div className="max-w-xl">
+        <div className="max-w-xl space-y-3">
           <div className="rounded-2xl border border-[color:var(--glass-border)] bg-gradient-to-br from-ci-dark via-gray-900 to-black p-6 shadow-2xl">
             {/* Card header */}
             <div className="flex items-center gap-3 mb-5 pb-4 border-b border-[color:var(--glass-border)]">
@@ -228,6 +243,15 @@ export default function HealthId() {
               <p className="text-[10px] text-muted-foreground">⛓ Secured on Polygon · Soulbound Token (SBT) · Non-transférable</p>
             </div>
           </div>
+
+          {/* Print button */}
+          <button
+            onClick={() => window.print()}
+            className="flex items-center gap-2 text-sm text-muted-foreground hover:text-foreground transition-colors"
+          >
+            <Printer className="h-4 w-4" />
+            Imprimer ma carte ID Santé
+          </button>
         </div>
 
         {/* Info card */}
