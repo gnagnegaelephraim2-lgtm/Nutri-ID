@@ -1,6 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
-import { FolderOpen, Flame, ShieldCheck, Utensils, Plus, TrendingUp, Bell, Syringe } from 'lucide-react';
+import { FolderOpen, Flame, ShieldCheck, Utensils, Plus, TrendingUp, Bell, Syringe, Video, MapPin, Phone } from 'lucide-react';
+import { SpiritualWidget } from '@/components/SpiritualWidget';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -12,6 +13,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/hooks/useI18n';
+import type { Teleconsult } from '@/types/api';
 
 function buildDailyKcal(logs: { logged_at: string; calories: number }[]) {
   const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
@@ -54,6 +56,11 @@ export default function Dashboard() {
     queryFn: api.getVaccines,
   });
 
+  const { data: consults } = useQuery({
+    queryKey: ['teleconsults'],
+    queryFn: api.getTeleconsults,
+  });
+
   const chartData = nutritionLogs ? buildDailyKcal(nutritionLogs) : [];
 
   const today = new Date();
@@ -71,6 +78,11 @@ export default function Dashboard() {
     const d = new Date(v.next_dose_at);
     return d >= today && d <= in30Days;
   });
+
+  // Next confirmed consultation with a join link
+  const nextConsult = (consults ?? [] as Teleconsult[]).find(
+    (c: Teleconsult) => c.status === 'confirmed' && c.meeting_link && new Date(c.scheduled_at) > new Date()
+  );
 
   const expiryDate = user?.cmu_expiry_date
     ? new Date(user.cmu_expiry_date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'long', year: 'numeric' })
@@ -244,6 +256,77 @@ export default function Dashboard() {
             </CardContent>
           </Card>
         )}
+
+        {/* Upcoming teleconsult banner */}
+        {nextConsult && (
+          <Card className="border-ci-green/40 bg-ci-green/5">
+            <CardContent className="p-4 flex items-center gap-3">
+              <div className="flex h-10 w-10 items-center justify-center rounded-full bg-ci-green/20 shrink-0">
+                <Video className="h-5 w-5 text-ci-green" />
+              </div>
+              <div className="flex-1 min-w-0">
+                <p className="font-semibold text-sm text-foreground">Consultation vidéo confirmée</p>
+                <p className="text-xs text-muted-foreground">
+                  {new Date(nextConsult.scheduled_at).toLocaleString('fr-FR', { dateStyle: 'medium', timeStyle: 'short' })}
+                </p>
+              </div>
+              <a
+                href={nextConsult.meeting_link!}
+                target="_blank"
+                rel="noopener noreferrer"
+                className="shrink-0 flex items-center gap-1.5 rounded-lg bg-ci-green px-3 py-2 text-xs font-bold text-white hover:bg-ci-green/90 transition-colors"
+              >
+                <Video className="h-3.5 w-3.5" /> Rejoindre
+              </a>
+            </CardContent>
+          </Card>
+        )}
+
+        {/* Quick actions */}
+        <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+          <Link to="/teleconsult">
+            <Card className="hover:border-ci-orange/40 transition-colors cursor-pointer h-full">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ci-orange/15 shrink-0">
+                  <Video className="h-4 w-4 text-ci-orange" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">Téléconsultation</p>
+                  <p className="text-xs text-muted-foreground">Consulter un médecin</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/find-care">
+            <Card className="hover:border-ci-green/40 transition-colors cursor-pointer h-full">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ci-green/15 shrink-0">
+                  <MapPin className="h-4 w-4 text-ci-green" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">Soins proches</p>
+                  <p className="text-xs text-muted-foreground">1 063 établissements</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+          <Link to="/find-care?q=pharmacie">
+            <Card className="hover:border-ci-green/40 transition-colors cursor-pointer h-full">
+              <CardContent className="p-4 flex items-center gap-3">
+                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-ci-green/15 shrink-0">
+                  <Phone className="h-4 w-4 text-ci-green" />
+                </div>
+                <div>
+                  <p className="font-semibold text-sm text-foreground">Pharmacie de garde</p>
+                  <p className="text-xs text-muted-foreground">Ouverte 24h/24</p>
+                </div>
+              </CardContent>
+            </Card>
+          </Link>
+        </div>
+
+        {/* Spiritual widget — synced with Fasting page via React Query cache */}
+        <SpiritualWidget />
 
         {/* Last meal */}
         <Card>

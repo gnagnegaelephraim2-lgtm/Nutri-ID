@@ -20,6 +20,8 @@ import Settings from '@/pages/Settings';
 import DoctorDashboard from '@/pages/DoctorDashboard';
 import ForgotPassword from '@/pages/ForgotPassword';
 import ResetPassword from '@/pages/ResetPassword';
+import Crypto from '@/pages/Crypto';
+import { EmergencySOS } from '@/components/EmergencySOS';
 
 function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -40,6 +42,9 @@ function AppShell() {
           </AnimatePresence>
         </main>
       </div>
+
+      {/* Floating SOS button — always visible */}
+      <EmergencySOS />
     </div>
   );
 }
@@ -73,6 +78,7 @@ export default function App() {
         <Route path="/find-care" element={<FindCare />} />
         <Route path="/settings" element={<Settings />} />
         <Route path="/doctor" element={<DoctorDashboard />} />
+        <Route path="/crypto" element={<Crypto />} />
       </Route>
     </Routes>
   );

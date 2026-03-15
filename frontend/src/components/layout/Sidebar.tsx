@@ -2,7 +2,7 @@ import { NavLink, useNavigate } from 'react-router-dom';
 import {
   Home, LayoutDashboard, CreditCard, FolderOpen, ShieldPlus,
   Video, ShieldCheck, UtensilsCrossed, MapPin, CalendarHeart,
-  Settings, LogOut, Plus, Stethoscope,
+  Settings, LogOut, Stethoscope, Coins,
 } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/hooks/useI18n';
@@ -19,6 +19,7 @@ const patientNavItems = [
   { to: '/teleconsult', icon: Video, i18nKey: 'nav.teleconsult' },
   { to: '/cmu', icon: ShieldCheck, i18nKey: 'nav.cmu' },
   { to: '/fasting', icon: CalendarHeart, i18nKey: 'nav.fasting' },
+  { to: '/crypto',  icon: Coins,        i18nKey: 'nav.crypto' },
   { to: '/settings', icon: Settings, i18nKey: 'nav.settings' },
 ];
 

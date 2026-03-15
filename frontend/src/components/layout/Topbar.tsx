@@ -16,6 +16,11 @@ const LANGS: { value: Lang; label: string }[] = [
   { value: 'baoule', label: 'Baoulé' },
   { value: 'bete', label: 'Bété' },
   { value: 'agni', label: 'Agni' },
+  { value: 'senufo', label: 'Sénoufo' },
+  { value: 'guere', label: 'Guéré' },
+  { value: 'attie', label: 'Attié' },
+  { value: 'kroumen', label: 'Kroumen' },
+  { value: 'adioukrou', label: 'Adioukrou' },
 ];
 
 export function Topbar({ onMenuToggle }: TopbarProps) {
