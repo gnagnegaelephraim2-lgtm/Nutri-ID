@@ -24,6 +24,7 @@ import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/hooks/useI18n';
 import type { Lang } from '@/contexts/I18nContext';
 import { useState, useMemo } from 'react';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const bloodTypes = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
@@ -117,6 +118,28 @@ export default function Settings() {
   const [notifTeleconsult, setNotifTeleconsult] = useState(() => localStorage.getItem('notif_teleconsult') !== 'false');
   const [notifFasting, setNotifFasting] = useState(() => localStorage.getItem('notif_fasting') !== 'false');
 
+  const { requestPermission, isGranted, isDenied } = useNotifications();
+
+  const handleNotifToggle = async (
+    key: string,
+    value: boolean,
+    setter: (v: boolean) => void,
+  ) => {
+    if (value && !isGranted) {
+      const granted = await requestPermission();
+      if (!granted) {
+        toast.warning(
+          isDenied
+            ? 'Notifications bloquées par le navigateur. Activez-les dans Paramètres > Confidentialité.'
+            : 'Permission notifications refusée.',
+        );
+        return;
+      }
+    }
+    setter(value);
+    localStorage.setItem(`notif_${key}`, String(value));
+  };
+
   const [liveWeight, setLiveWeight] = useState<number | undefined>(user?.weight ?? undefined);
   const [liveHeight, setLiveHeight] = useState<number | undefined>(user?.height ?? undefined);
 
@@ -175,29 +198,48 @@ export default function Settings() {
   };
 
   const saveNotifications = () => {
-    localStorage.setItem('notif_records', String(notifRecords));
-    localStorage.setItem('notif_vaccines', String(notifVaccines));
+    localStorage.setItem('notif_records',     String(notifRecords));
+    localStorage.setItem('notif_vaccines',    String(notifVaccines));
     localStorage.setItem('notif_teleconsult', String(notifTeleconsult));
-    localStorage.setItem('notif_fasting', String(notifFasting));
+    localStorage.setItem('notif_fasting',     String(notifFasting));
     toast.success('Préférences de notifications enregistrées.');
   };
 
-  const exportData = () => {
-    const data = {
-      profile: user,
-      pinata_configured: !!localStorage.getItem('pinata_api_key'),
-      language: lang,
-      theme,
-      exported_at: new Date().toISOString(),
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `nutriid-data-${user?.full_name?.replace(/\s+/g, '-') ?? 'export'}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-    toast.success('Données exportées avec succès.');
+  const [exporting, setExporting] = useState(false);
+
+  const exportData = async () => {
+    setExporting(true);
+    try {
+      const [nutrition, records, vaccines, fastingPlans, teleconsults] = await Promise.all([
+        api.getNutrition(),
+        api.getRecords(),
+        api.getVaccines(),
+        api.getFastingPlans(),
+        api.getTeleconsults(),
+      ]);
+      const data = {
+        exported_at: new Date().toISOString(),
+        profile: user,
+        nutrition_logs: nutrition,
+        medical_records: records,
+        vaccines,
+        fasting_plans: fastingPlans,
+        teleconsults,
+        preferences: { language: lang, theme },
+      };
+      const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+      const url  = URL.createObjectURL(blob);
+      const a    = document.createElement('a');
+      a.href     = url;
+      a.download = `nutriid-export-${new Date().toISOString().slice(0, 10)}.json`;
+      a.click();
+      URL.revokeObjectURL(url);
+      toast.success('Données complètes exportées (RGPD).');
+    } catch {
+      toast.error('Erreur lors de l\'export — vérifiez votre connexion.');
+    } finally {
+      setExporting(false);
+    }
   };
 
   const pinataActive = !!localStorage.getItem('pinata_api_key') && !!localStorage.getItem('pinata_secret_key');
@@ -592,11 +634,17 @@ export default function Settings() {
                 <CardDescription>Choisissez les alertes à recevoir</CardDescription>
               </CardHeader>
               <CardContent className="space-y-3">
+                {isDenied && (
+                  <div className="flex items-center gap-2 rounded-lg border border-ci-orange/30 bg-ci-orange/10 px-3 py-2 text-xs text-ci-orange">
+                    <BellOff className="h-3.5 w-3.5 shrink-0" />
+                    Notifications bloquées par le navigateur. Activez-les dans Paramètres &gt; Confidentialité.
+                  </div>
+                )}
                 {[
-                  { key: 'records', label: 'Nouveaux documents médicaux', desc: 'Quand un document est ajouté à votre dossier', val: notifRecords, set: setNotifRecords },
-                  { key: 'vaccines', label: 'Rappels de vaccination', desc: 'Alertes pour les vaccins à venir', val: notifVaccines, set: setNotifVaccines },
-                  { key: 'teleconsult', label: 'Téléconsultations', desc: 'Confirmation et rappels de rendez-vous', val: notifTeleconsult, set: setNotifTeleconsult },
-                  { key: 'fasting', label: 'Jeûne & Spiritualité', desc: 'Rappels de jeûne et prières', val: notifFasting, set: setNotifFasting },
+                  { key: 'records',     label: 'Nouveaux documents médicaux', desc: 'Quand un document est ajouté à votre dossier', val: notifRecords,    set: setNotifRecords    },
+                  { key: 'vaccines',    label: 'Rappels de vaccination',       desc: 'Alertes pour les vaccins à venir',              val: notifVaccines,   set: setNotifVaccines   },
+                  { key: 'teleconsult', label: 'Téléconsultations',            desc: 'Confirmation et rappels de rendez-vous',        val: notifTeleconsult,set: setNotifTeleconsult},
+                  { key: 'fasting',     label: 'Jeûne & Spiritualité',         desc: 'Rappels de jeûne et prières',                   val: notifFasting,    set: setNotifFasting    },
                 ].map((item) => (
                   <div key={item.key} className="flex items-center justify-between p-3 rounded-xl border border-white/10 bg-white/5">
                     <div className="flex items-center gap-3">
@@ -611,7 +659,7 @@ export default function Settings() {
                     </div>
                     <button
                       type="button"
-                      onClick={() => item.set(!item.val)}
+                      onClick={() => handleNotifToggle(item.key, !item.val, item.set)}
                       className={`relative w-11 h-6 rounded-full transition-colors flex-shrink-0 ${item.val ? 'bg-ci-green' : 'bg-white/10'}`}
                     >
                       <span className={`absolute top-0.5 left-0.5 w-5 h-5 rounded-full bg-white shadow-sm transition-transform ${item.val ? 'translate-x-5' : 'translate-x-0'}`} />
@@ -749,8 +797,14 @@ export default function Settings() {
                 <CardDescription>Téléchargez une copie de vos données (RGPD)</CardDescription>
               </CardHeader>
               <CardContent>
-                <Button onClick={exportData} variant="outline" className="w-full gap-2 border-ci-green/30 text-ci-green hover:bg-ci-green/10">
-                  <Download className="h-4 w-4" /> Télécharger mes données (JSON)
+                <Button
+                  onClick={exportData}
+                  disabled={exporting}
+                  variant="outline"
+                  className="w-full gap-2 border-ci-green/30 text-ci-green hover:bg-ci-green/10"
+                >
+                  <Download className="h-4 w-4" />
+                  {exporting ? 'Export en cours...' : 'Télécharger toutes mes données (JSON)'}
                 </Button>
               </CardContent>
             </Card>

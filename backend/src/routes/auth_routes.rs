@@ -520,10 +520,8 @@ pub struct ForgotPasswordPayload {
 }
 
 /// POST /api/auth/forgot-password
-/// Creates a 15-minute reset token for the given email.
-/// In production this token would be delivered via email/SMS; here it is
-/// returned in the response body so the frontend can link directly to the
-/// reset page (suitable while no email service is configured).
+/// Creates a 15-minute reset token and sends it via Resend email API.
+/// If RESEND_API_KEY is not set, falls back to logging the token (dev mode).
 async fn forgot_password_handler(
     State(pool): State<SqlitePool>,
     Json(payload): Json<ForgotPasswordPayload>,
@@ -573,12 +571,64 @@ async fn forgot_password_handler(
         .await
         .map_err(|e| api_err(StatusCode::INTERNAL_SERVER_ERROR, &e.to_string()))?;
 
-    tracing::info!("Password reset token for {}: {}", payload.email, token);
+    // ── Send reset email via Resend ──────────────────────────────────────────
+    let resend_key = std::env::var("RESEND_API_KEY").unwrap_or_default();
+    let app_url = std::env::var("APP_URL")
+        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+
+    if resend_key.is_empty() {
+        // Dev mode: log only, never expose in response
+        tracing::warn!(
+            "[DEV] Password reset token for {} — {}/reset-password?token={}",
+            payload.email, app_url, token
+        );
+    } else {
+        let reset_url = format!("{}/reset-password?token={}", app_url, token);
+        let html_body = format!(
+            r#"<div style="font-family:sans-serif;max-width:500px;margin:auto">
+              <h2 style="color:#009A44">Nutri-ID — Réinitialisation</h2>
+              <p>Vous avez demandé la réinitialisation de votre mot de passe.</p>
+              <p><a href="{url}" style="display:inline-block;padding:12px 24px;background:#F77F00;color:#fff;border-radius:8px;text-decoration:none;font-weight:bold">
+                Réinitialiser mon mot de passe
+              </a></p>
+              <p style="color:#666;font-size:13px">Ce lien expire dans <strong>15 minutes</strong>.<br>
+              Si vous n'avez pas fait cette demande, ignorez cet email.</p>
+              <hr style="border:none;border-top:1px solid #eee">
+              <p style="color:#aaa;font-size:12px">Nutri-ID · Plateforme Nationale de Santé · Côte d'Ivoire</p>
+            </div>"#,
+            url = reset_url
+        );
+
+        let client = reqwest::Client::new();
+        let resp = client
+            .post("https://api.resend.com/emails")
+            .header("Authorization", format!("Bearer {}", resend_key))
+            .header("Content-Type", "application/json")
+            .json(&serde_json::json!({
+                "from": "Nutri-ID <no-reply@nutriid.ci>",
+                "to": [&payload.email],
+                "subject": "Réinitialisation de votre mot de passe Nutri-ID",
+                "html": html_body
+            }))
+            .send()
+            .await;
+
+        match resp {
+            Ok(r) if r.status().is_success() => {
+                tracing::info!("Reset email sent to {}", payload.email);
+            }
+            Ok(r) => {
+                let status = r.status();
+                tracing::error!("Resend API error {}: failed to send to {}", status, payload.email);
+            }
+            Err(e) => {
+                tracing::error!("Resend request failed: {}", e);
+            }
+        }
+    }
 
     Ok(Json(serde_json::json!({
-        "message": "Si cet email existe, un lien de réinitialisation a été envoyé.",
-        // TODO: remove `reset_token` once an email service is wired up
-        "reset_token": token
+        "message": "Si cet email existe, un lien de réinitialisation a été envoyé."
     })))
 }
 

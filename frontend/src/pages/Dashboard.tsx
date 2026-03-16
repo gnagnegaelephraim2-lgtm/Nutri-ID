@@ -2,6 +2,8 @@ import { useQuery } from '@tanstack/react-query';
 import { Link } from 'react-router-dom';
 import { FolderOpen, Flame, ShieldCheck, Utensils, Plus, TrendingUp, Bell, Syringe, Video, MapPin, Phone } from 'lucide-react';
 import { SpiritualWidget } from '@/components/SpiritualWidget';
+import { useNotifications } from '@/hooks/useNotifications';
+import { useEffect, useRef } from 'react';
 import {
   AreaChart, Area, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer
 } from 'recharts';
@@ -40,6 +42,8 @@ function buildDailyKcal(logs: { logged_at: string; calories: number }[]) {
 export default function Dashboard() {
   const { user } = useAuth();
   const { t } = useI18n();
+  const { notify, isGranted } = useNotifications();
+  const notifiedRef = useRef(false);
 
   const { data: stats, isLoading: statsLoading } = useQuery({
     queryKey: ['dashboard'],
@@ -87,6 +91,43 @@ export default function Dashboard() {
   const expiryDate = user?.cmu_expiry_date
     ? new Date(user.cmu_expiry_date).toLocaleDateString('fr-CI', { day: 'numeric', month: 'long', year: 'numeric' })
     : null;
+
+  // Fire desktop notifications once per session when data is loaded
+  useEffect(() => {
+    if (!isGranted || notifiedRef.current) return;
+    // Wait until at least one dataset is loaded
+    if (!vaccines && !consults) return;
+
+    notifiedRef.current = true;
+
+    if (overdueVaccines.length > 0) {
+      notify(
+        `💉 ${overdueVaccines.length} vaccin${overdueVaccines.length > 1 ? 's' : ''} en retard`,
+        {
+          body: overdueVaccines.map((v) => v.vaccine_name).join(', '),
+          tag: 'vaccines-overdue',
+        },
+      );
+    } else if (upcomingVaccines.length > 0) {
+      notify(
+        `💉 ${upcomingVaccines.length} vaccin${upcomingVaccines.length > 1 ? 's' : ''} à venir`,
+        {
+          body: `Prochain : ${upcomingVaccines[0].vaccine_name}`,
+          tag: 'vaccines-upcoming',
+        },
+      );
+    }
+
+    if (nextConsult) {
+      notify('📹 Consultation vidéo confirmée', {
+        body: `Rendez-vous le ${new Date(nextConsult.scheduled_at).toLocaleString('fr-FR', {
+          dateStyle: 'medium',
+          timeStyle: 'short',
+        })}`,
+        tag: 'teleconsult-upcoming',
+      });
+    }
+  }, [isGranted, vaccines, consults, overdueVaccines, upcomingVaccines, nextConsult, notify]);
 
   return (
     <PageTransition>
