@@ -1,0 +1,15 @@
+# =============================================================================
+# Railway — Nutri-ID Frontend Deployment Config
+# =============================================================================
+
+[build]
+  builder        = "dockerfile"
+  dockerfilePath = "./Dockerfile"
+
+[deploy]
+  # /healthz retourne 200 — défini dans frontend/nginx.conf
+  healthcheckPath    = "/healthz"
+  healthcheckTimeout = 60
+
+  restartPolicyType       = "on_failure"
+  restartPolicyMaxRetries = 3
