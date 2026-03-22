@@ -12,12 +12,19 @@
   NODE_VERSION = "20"
   # VITE_API_URL must be set in Netlify Dashboard → Site → Environment Variables
   # Value: your Railway backend URL e.g. https://nutriid-backend.up.railway.app
+  # IMPORTANT: tick "Available at build time" so Vite injects it into the bundle.
 
 # ── SPA Fallback — all routes served by index.html (React Router) ─────────────
 [[redirects]]
   from   = "/*"
   to     = "/index.html"
   status = 200
+
+# ── Cache: Vite assets carry content-hash filenames → safe to cache forever ───
+[[headers]]
+  for = "/assets/*"
+  [headers.values]
+    Cache-Control = "public, max-age=31536000, immutable"
 
 # ── Security Headers ──────────────────────────────────────────────────────────
 [[headers]]

@@ -46,14 +46,21 @@ async fn main() {
         .expect("Failed to connect to SQLite. Check DATABASE_URL in .env");
     tracing::info!("✅ Database connected and migrations applied.");
 
-    // In production set ALLOWED_ORIGIN=https://nutriid.ci; falls back to Any in dev.
+    // In production set ALLOWED_ORIGIN to one or more comma-separated origins,
+    // e.g. "https://nutri-id.netlify.app,https://nutriid.ci"
+    // Falls back to Any in development (no env var set).
     let cors = match std::env::var("ALLOWED_ORIGIN") {
-        Ok(origin) => {
-            let header_val = origin
-                .parse::<axum::http::HeaderValue>()
-                .expect("ALLOWED_ORIGIN must be a valid HTTP header value");
+        Ok(origins_str) => {
+            let origins: Vec<axum::http::HeaderValue> = origins_str
+                .split(',')
+                .map(|o| {
+                    o.trim()
+                        .parse::<axum::http::HeaderValue>()
+                        .expect("ALLOWED_ORIGIN contains an invalid header value")
+                })
+                .collect();
             CorsLayer::new()
-                .allow_origin(AllowOrigin::exact(header_val))
+                .allow_origin(AllowOrigin::list(origins))
                 .allow_methods(Any)
                 .allow_headers(Any)
         }

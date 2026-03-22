@@ -60,7 +60,7 @@ WORKDIR /app
 COPY --from=builder /usr/src/app/target/release/nutriid-backend /app/nutriid-backend
 COPY --from=builder /usr/src/app/migrations /app/migrations
 
-RUN chown -R nutriid:nutriid /app
+RUN mkdir -p /app/data && chown -R nutriid:nutriid /app
 
 USER nutriid
 
