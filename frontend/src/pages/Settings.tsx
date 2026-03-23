@@ -30,6 +30,10 @@ const bloodTypes = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 const LANGS: { value: Lang; label: string; native: string }[] = [
   { value: 'fr', label: 'Français', native: 'Français' },
+  { value: 'en', label: 'English', native: 'English' },
+  { value: 'es', label: 'Español', native: 'Español' },
+  { value: 'ar', label: 'Arabic', native: 'العربية' },
+  { value: 'zh', label: 'Mandarin', native: '中文' },
   { value: 'dioula', label: 'Dioula', native: 'Dioula' },
   { value: 'baoule', label: 'Baoulé', native: 'Baoulé' },
   { value: 'bete', label: 'Bété', native: 'Bété' },
