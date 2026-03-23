@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
+import LangPicker from '@/components/LangPicker';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -30,6 +31,7 @@ export default function Login() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 relative overflow-hidden">
+      <LangPicker />
       <div className="absolute top-1/4 left-1/4 w-80 h-80 bg-ci-orange/15 rounded-full blur-3xl -z-10" />
       <div className="absolute bottom-1/4 right-1/4 w-64 h-64 bg-ci-green/10 rounded-full blur-3xl -z-10" />
 

@@ -10,6 +10,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
+import LangPicker from '@/components/LangPicker';
 
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Nom requis'),
@@ -37,6 +38,7 @@ export default function Register() {
 
   return (
     <div className="flex min-h-screen items-center justify-center px-4 py-8 relative overflow-hidden">
+      <LangPicker />
       <div className="absolute top-1/4 right-1/4 w-80 h-80 bg-ci-orange/15 rounded-full blur-3xl -z-10" />
 
       <motion.div
