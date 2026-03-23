@@ -2,15 +2,16 @@ app = "nutri-id-api"
 primary_region = "cdg"
 
 [build]
+  dockerfile = "Dockerfile"
 
 [env]
-  PORT = "3000"
-  RUST_LOG = "info"
-  RUST_ENV = "production"
-  DATABASE_URL = "sqlite:/app/data/nutriid.db?mode=rwc"
-  POLYGON_RPC_URL = "https://rpc-amoy.polygon.technology"
+  PORT             = "3000"
+  RUST_LOG         = "info"
+  RUST_ENV         = "production"
+  DATABASE_URL     = "sqlite:/app/data/nutriid.db?mode=rwc"
+  POLYGON_RPC_URL  = "https://rpc-amoy.polygon.technology"
   POLYGON_CHAIN_ID = "80002"
-  ALLOWED_ORIGIN = "https://nutri-id-app.fly.dev"
+  # ALLOWED_ORIGIN est défini via flyctl secrets (voir ci-dessous)
 
 [[mounts]]
   source = "nutriid_data"
