@@ -11,6 +11,7 @@ import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/com
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useAuth } from '@/hooks/useAuth';
 import LangPicker from '@/components/LangPicker';
+import { useI18nContext } from '@/contexts/I18nContext';
 
 const registerSchema = z.object({
   full_name: z.string().min(2, 'Nom requis'),
@@ -25,6 +26,7 @@ const bloodTypes = ['O+', 'O-', 'A+', 'A-', 'B+', 'B-', 'AB+', 'AB-'];
 
 export default function Register() {
   const { register: authRegister } = useAuth();
+  const { t } = useI18nContext();
   const { register, handleSubmit, setValue, formState: { errors } } = useForm<RegisterForm>({
     resolver: zodResolver(registerSchema),
     defaultValues: { blood_type: 'O+' },
@@ -56,33 +58,33 @@ export default function Register() {
                 <div className="w-1/3 bg-[#009A44]" />
               </div>
             </div>
-            <CardTitle className="text-xl">Créer mon ID Santé</CardTitle>
-            <CardDescription>Rejoignez le réseau national de santé</CardDescription>
+            <CardTitle className="text-xl">{t('register.title')}</CardTitle>
+            <CardDescription>{t('register.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
               <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Nom et Prénoms *</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('register.name')}</label>
                 <Input placeholder="Gnagne, Chrys Elisée" {...register('full_name')} />
                 {errors.full_name && <p className="text-xs text-red-400">{errors.full_name.message}</p>}
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Email *</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('register.email')}</label>
                 <Input type="email" placeholder="votre@email.com" {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1">
-                <label className="text-sm font-medium text-muted-foreground">Mot de passe *</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('register.password')}</label>
                 <Input type="password" placeholder="••••••••" {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">NIP (Optionnel)</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('register.nid')}</label>
                   <Input placeholder="CI-..." {...register('national_id')} />
                 </div>
                 <div className="space-y-1">
-                  <label className="text-sm font-medium text-muted-foreground">Groupe Sanguin</label>
+                  <label className="text-sm font-medium text-muted-foreground">{t('register.blood')}</label>
                   <Select defaultValue="O+" onValueChange={(v) => setValue('blood_type', v)}>
                     <SelectTrigger>
                       <SelectValue />
@@ -96,12 +98,12 @@ export default function Register() {
                 </div>
               </div>
               <Button type="submit" variant="default" className="w-full mt-2 bg-ci-orange" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Création...' : 'Créer mon compte →'}
+                {mutation.isPending ? t('register.submitting') : t('register.submit')}
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
-              Déjà inscrit ?{' '}
-              <Link to="/login" className="text-ci-green font-semibold hover:underline">Se connecter</Link>
+              {t('register.have_account')}{' '}
+              <Link to="/login" className="text-ci-green font-semibold hover:underline">{t('register.signin')}</Link>
             </p>
           </CardContent>
         </Card>

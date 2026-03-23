@@ -11,6 +11,7 @@ import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { useAuth } from '@/hooks/useAuth';
 import LangPicker from '@/components/LangPicker';
+import { useI18nContext } from '@/contexts/I18nContext';
 
 const loginSchema = z.object({
   email: z.string().email('Email invalide'),
@@ -20,6 +21,7 @@ type LoginForm = z.infer<typeof loginSchema>;
 
 export default function Login() {
   const { login } = useAuth();
+  const { t } = useI18nContext();
   const { register, handleSubmit, formState: { errors } } = useForm<LoginForm>({
     resolver: zodResolver(loginSchema),
   });
@@ -48,35 +50,35 @@ export default function Login() {
                 <Plus className="h-7 w-7 text-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Bienvenue sur Nutri-ID</CardTitle>
-            <CardDescription>Connectez-vous à votre espace santé</CardDescription>
+            <CardTitle className="text-xl">{t('login.title')}</CardTitle>
+            <CardDescription>{t('login.subtitle')}</CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Email</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('login.email')}</label>
                 <Input type="email" placeholder="votre@email.com" {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Mot de passe</label>
+                <label className="text-sm font-medium text-muted-foreground">{t('login.password')}</label>
                 <Input type="password" placeholder="••••••••" {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Connexion...' : 'Se connecter →'}
+                {mutation.isPending ? t('login.submitting') : t('login.submit')}
               </Button>
             </form>
             <div className="mt-4 space-y-2 text-center text-sm text-muted-foreground">
               <p>
                 <Link to="/forgot-password" className="text-ci-orange hover:underline">
-                  Mot de passe oublié ?
+                  {t('login.forgot')}
                 </Link>
               </p>
               <p>
-                Pas encore de compte ?{' '}
+                {t('login.no_account')}{' '}
                 <Link to="/register" className="text-ci-orange font-semibold hover:underline">
-                  Créer mon ID Santé
+                  {t('login.create')}
                 </Link>
               </p>
             </div>
