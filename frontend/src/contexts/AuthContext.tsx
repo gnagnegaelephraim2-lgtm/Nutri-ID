@@ -34,6 +34,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       .catch(() => {
         localStorage.removeItem('nutriid_token');
         setToken(null);
+        navigate('/login');
       })
       .finally(() => setIsLoading(false));
   }, [token]);

@@ -25,7 +25,7 @@ export default function Login() {
 
   const mutation = useMutation({
     mutationFn: (data: LoginForm) => login(data),
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || 'Email ou mot de passe incorrect.'),
   });
 
   return (

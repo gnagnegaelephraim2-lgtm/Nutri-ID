@@ -32,7 +32,7 @@ export default function Register() {
   const mutation = useMutation({
     mutationFn: (data: RegisterForm) =>
       authRegister({ ...data, role: 'PATIENT' }),
-    onError: (err: Error) => toast.error(err.message),
+    onError: (err: Error) => toast.error(err.message || 'Erreur lors de la création du compte. Réessayez.'),
   });
 
   return (
