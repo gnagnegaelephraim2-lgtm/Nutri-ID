@@ -47,7 +47,7 @@ async fn chat_handler(
     let id_str = claims.sub.to_string();
     let user_row = sqlx::query(
         r#"
-        SELECT u.email, p.full_name, p.national_id, p.blood_type, p.cmu_active 
+        SELECT u.email, p.full_name, p.national_id, p.blood_type, p.cmu_active
         FROM users u
         LEFT JOIN patients p ON u.id = p.user_id
         WHERE u.id = ?
@@ -144,85 +144,79 @@ async fn chat_handler(
          Réponds en français. Fais des réponses concises, utilise du markdown pour formater (gras, listes).",
     );
 
-    let api_key = env::var("GEMINI_API_KEY").map_err(|_| {
+    let api_key = env::var("ANTHROPIC_API_KEY").map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "GEMINI_API_KEY non configurée".into(),
+            "ANTHROPIC_API_KEY non configurée".into(),
         )
     })?;
 
     let client = reqwest::Client::new();
-    let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}",
-        api_key
-    );
 
-    // Build Gemini request body
-    // Map history to Gemini format
-    let mut contents = serde_json::json!([]);
+    // Build Anthropic messages array from history
+    // Gemini used role "model"; Anthropic uses "assistant"
+    let mut messages: Vec<serde_json::Value> = Vec::new();
     if let Some(history) = payload.history {
         for msg in history {
-            // "model" is Gemini's role name for itself
-            let role = if msg.role == "bot" || msg.role == "model" {
-                "model"
+            let role = if msg.role == "model" || msg.role == "assistant" {
+                "assistant"
             } else {
                 "user"
             };
-            let texts: Vec<String> = msg.parts.into_iter().map(|p| p.text).collect();
-            contents.as_array_mut().unwrap().push(serde_json::json!({
+            let text = msg.parts.into_iter().map(|p| p.text).collect::<Vec<_>>().join("\n");
+            messages.push(serde_json::json!({
                 "role": role,
-                "parts": [{"text": texts.join("\n")}]
+                "content": text
             }));
         }
     }
 
     // Add current user message
-    contents.as_array_mut().unwrap().push(serde_json::json!({
+    messages.push(serde_json::json!({
         "role": "user",
-        "parts": [{"text": payload.message}]
+        "content": payload.message
     }));
 
-    let gemini_req = serde_json::json!({
-        "systemInstruction": {
-            "parts": [{"text": system_prompt}]
-        },
-        "contents": contents,
-        "generationConfig": {
-            "temperature": 0.7,
-            "maxOutputTokens": 800
-        }
+    let claude_req = serde_json::json!({
+        "model": "claude-opus-4-6",
+        "max_tokens": 800,
+        "system": system_prompt,
+        "messages": messages
     });
 
     let res = client
-        .post(&url)
-        .json(&gemini_req)
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&claude_req)
         .send()
         .await
         .map_err(|e| {
             (
                 StatusCode::BAD_GATEWAY,
-                format!("Erreur réseau Gemini: {}", e),
+                format!("Erreur réseau Claude: {}", e),
             )
         })?;
 
     if !res.status().is_success() {
         let err_text = res.text().await.unwrap_or_default();
-        tracing::error!("Gemini API Error: {}", err_text);
+        tracing::error!("Claude API Error: {}", err_text);
         return Err((
             StatusCode::BAD_GATEWAY,
-            format!("Erreur API Gemini: {}", err_text),
+            format!("Erreur API Claude: {}", err_text),
         ));
     }
 
     let raw_json: serde_json::Value = res.json().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Erreur parsing réponse Gemini: {}", e),
+            format!("Erreur parsing réponse Claude: {}", e),
         )
     })?;
 
-    // Extract text from: { "candidates": [ { "content": { "parts": [ { "text": "..." } ] } } ] }
-    let response = raw_json["candidates"][0]["content"]["parts"][0]["text"]
+    // Extract text from: { "content": [ { "type": "text", "text": "..." } ] }
+    let response = raw_json["content"][0]["text"]
         .as_str()
         .unwrap_or("Désolé, je n'ai pas pu générer de réponse.")
         .to_string();
@@ -251,18 +245,14 @@ async fn analyze_food_handler(
     _claims: Claims,
     Json(payload): Json<FoodImageRequest>,
 ) -> Result<Json<FoodAnalysis>, (StatusCode, String)> {
-    let api_key = env::var("GEMINI_API_KEY").map_err(|_| {
+    let api_key = env::var("ANTHROPIC_API_KEY").map_err(|_| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            "GEMINI_API_KEY non configurée".into(),
+            "ANTHROPIC_API_KEY non configurée".into(),
         )
     })?;
 
     let client = reqwest::Client::new();
-    let url = format!(
-        "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key={}",
-        api_key
-    );
 
     let prompt_text = "Analyse cette image de nourriture. Identifie le plat (nom en français, \
         nom ivoirien local si applicable: Garba, Attiéké, Foutou, Alloco, etc.). \
@@ -270,59 +260,65 @@ async fn analyze_food_handler(
         Réponds UNIQUEMENT en JSON valide, sans markdown, sans explication: \
         {\"meal_name\": \"...\", \"proteins\": <number>, \"carbs\": <number>, \"fats\": <number>, \"description\": \"...\"}";
 
-    let gemini_req = serde_json::json!({
-        "contents": [{
-            "parts": [
+    let claude_req = serde_json::json!({
+        "model": "claude-opus-4-6",
+        "max_tokens": 800,
+        "messages": [{
+            "role": "user",
+            "content": [
                 {
-                    "inline_data": {
-                        "mime_type": payload.mime_type,
+                    "type": "image",
+                    "source": {
+                        "type": "base64",
+                        "media_type": payload.mime_type,
                         "data": payload.image_base64
                     }
                 },
-                { "text": prompt_text }
+                {
+                    "type": "text",
+                    "text": prompt_text
+                }
             ]
-        }],
-        "generationConfig": {
-            "temperature": 0.1,
-            "maxOutputTokens": 800,
-            "responseMimeType": "application/json"
-        }
+        }]
     });
 
     let res = client
-        .post(&url)
-        .json(&gemini_req)
+        .post("https://api.anthropic.com/v1/messages")
+        .header("x-api-key", &api_key)
+        .header("anthropic-version", "2023-06-01")
+        .header("content-type", "application/json")
+        .json(&claude_req)
         .send()
         .await
         .map_err(|e| {
             (
                 StatusCode::BAD_GATEWAY,
-                format!("Erreur réseau Gemini: {}", e),
+                format!("Erreur réseau Claude: {}", e),
             )
         })?;
 
     if !res.status().is_success() {
         let err_text = res.text().await.unwrap_or_default();
-        tracing::error!("Gemini analyze-food Error: {}", err_text);
+        tracing::error!("Claude analyze-food Error: {}", err_text);
         return Err((
             StatusCode::BAD_GATEWAY,
-            format!("Erreur API Gemini: {}", err_text),
+            format!("Erreur API Claude: {}", err_text),
         ));
     }
 
     let raw_json: serde_json::Value = res.json().await.map_err(|e| {
         (
             StatusCode::INTERNAL_SERVER_ERROR,
-            format!("Erreur parsing réponse Gemini: {}", e),
+            format!("Erreur parsing réponse Claude: {}", e),
         )
     })?;
 
-    let text = raw_json["candidates"][0]["content"]["parts"][0]["text"]
+    let text = raw_json["content"][0]["text"]
         .as_str()
         .unwrap_or("")
         .to_string();
 
-    tracing::info!("📸 Raw Gemini analyze-food response: {}", text);
+    tracing::info!("📸 Raw Claude analyze-food response: {}", text);
 
     // Strip possible markdown fences
     let cleaned = text
@@ -334,7 +330,6 @@ async fn analyze_food_handler(
         .to_string();
 
     // Robustly extract the JSON object: find first '{' and last '}'
-    // This handles markdown fences, leading/trailing text, and any whitespace.
     let json_start = cleaned.find('{').ok_or_else(|| {
         (
             StatusCode::UNPROCESSABLE_ENTITY,
@@ -350,7 +345,7 @@ async fn analyze_food_handler(
             format!("JSON incomplet dans la réponse IA. Réponse brute: {}", text),
         )
     })?;
-    let json_str = &text[json_start..=json_end];
+    let json_str = &cleaned[json_start..=json_end];
 
     let analysis: FoodAnalysis = serde_json::from_str(json_str).map_err(|e| {
         (
