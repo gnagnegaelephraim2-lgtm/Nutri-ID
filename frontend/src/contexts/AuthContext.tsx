@@ -48,11 +48,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [navigate]);
 
   const register = useCallback(async (payload: RegisterPayload) => {
-    const data = await api.register(payload);
-    localStorage.setItem('nutriid_token', data.token);
-    setToken(data.token);
-    // user profile is loaded by the useEffect → getMe()
-    navigate('/dashboard');
+    await api.register(payload);
+    navigate('/login');
   }, [navigate]);
 
   const logout = useCallback(() => {
