@@ -1,31 +1,18 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Menu, Sun, Moon, Globe } from 'lucide-react';
+import { Menu, Sun, Moon } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useTheme } from '@/hooks/useTheme';
 import { useI18n } from '@/hooks/useI18n';
-import type { Lang } from '@/contexts/I18nContext';
+import LangPicker from '@/components/LangPicker';
 
 interface TopbarProps {
   onMenuToggle: () => void;
 }
 
-const LANGS: { value: Lang; label: string }[] = [
-  { value: 'fr', label: 'Français' },
-  { value: 'dioula', label: 'Dioula' },
-  { value: 'baoule', label: 'Baoulé' },
-  { value: 'bete', label: 'Bété' },
-  { value: 'agni', label: 'Agni' },
-  { value: 'senufo', label: 'Sénoufo' },
-  { value: 'guere', label: 'Guéré' },
-  { value: 'attie', label: 'Attié' },
-  { value: 'kroumen', label: 'Kroumen' },
-  { value: 'adioukrou', label: 'Adioukrou' },
-];
-
 export function Topbar({ onMenuToggle }: TopbarProps) {
   const { theme, toggle } = useTheme();
-  const { lang, setLang, t } = useI18n();
+  const { t } = useI18n();
   const [query, setQuery] = useState('');
   const navigate = useNavigate();
 
@@ -59,20 +46,7 @@ export function Topbar({ onMenuToggle }: TopbarProps) {
       {/* Right actions */}
       <div className="flex items-center gap-2">
         {/* Language selector */}
-        <div className="flex items-center gap-1.5 rounded-lg border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-2.5 py-1.5">
-          <Globe className="h-3.5 w-3.5 text-muted-foreground" />
-          <select
-            value={lang}
-            onChange={(e) => setLang(e.target.value as Lang)}
-            className="bg-transparent text-xs text-muted-foreground focus:outline-none cursor-pointer"
-          >
-            {LANGS.map((l) => (
-              <option key={l.value} value={l.value} className="bg-gray-900">
-                {l.label}
-              </option>
-            ))}
-          </select>
-        </div>
+        <LangPicker variant="inline" />
 
         {/* Theme toggle */}
         <Button variant="ghost" size="icon" onClick={toggle} className="text-muted-foreground hover:text-foreground">
