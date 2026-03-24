@@ -10,10 +10,6 @@ RUN npm ci
 
 COPY . .
 
-# VITE_API_URL is injected at build time so the compiled JS knows the backend URL
-ARG VITE_API_URL
-ENV VITE_API_URL=$VITE_API_URL
-
 RUN npm run build
 
 # =============================================================================
@@ -22,7 +18,9 @@ RUN npm run build
 FROM nginx:1.25-alpine
 
 COPY --from=builder /app/dist /usr/share/nginx/html
-COPY nginx.conf /etc/nginx/conf.d/default.conf
+# Copy nginx config as a template; BACKEND_URL is substituted at container startup
+COPY nginx.conf /etc/nginx/conf.d/default.conf.template
 
 EXPOSE 80
-CMD ["nginx", "-g", "daemon off;"]
+# envsubst replaces only ${BACKEND_URL}, leaving nginx's own $variables intact
+CMD ["/bin/sh", "-c", "envsubst '${BACKEND_URL}' < /etc/nginx/conf.d/default.conf.template > /etc/nginx/conf.d/default.conf && nginx -g 'daemon off;'"]
