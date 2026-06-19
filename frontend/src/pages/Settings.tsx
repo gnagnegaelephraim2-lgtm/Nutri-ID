@@ -383,7 +383,7 @@ export default function Settings() {
 
                   <div className="grid grid-cols-2 gap-4">
                     <div>
-                      <label className="text-sm text-muted-foreground flex items-center gap-1"><Weight className="h-3 w-3" /> Poids (kg)</label>
+                      <label className="text-sm text-muted-foreground flex items-center gap-1"><Weight className="h-3 w-3" /> {t('settings.weight_label')}</label>
                       <Input
                         className="mt-1" type="number" step="0.1"
                         {...regProfile('weight')}
@@ -394,7 +394,7 @@ export default function Settings() {
                       />
                     </div>
                     <div>
-                      <label className="text-sm text-muted-foreground flex items-center gap-1"><Ruler className="h-3 w-3" /> Taille (cm)</label>
+                      <label className="text-sm text-muted-foreground flex items-center gap-1"><Ruler className="h-3 w-3" /> {t('settings.height_label')}</label>
                       <Input
                         className="mt-1" type="number" step="1"
                         {...regProfile('height')}
@@ -530,17 +530,17 @@ export default function Settings() {
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                     <p className="text-2xl font-bold font-heading text-ci-orange">{user?.weight ? `${user.weight}` : '—'}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">kg</p>
-                    <p className="text-xs text-muted-foreground">Poids</p>
+                    <p className="text-xs text-muted-foreground">{t('settings.weight_stat')}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                     <p className="text-2xl font-bold font-heading text-ci-green">{user?.height ? `${user.height}` : '—'}</p>
                     <p className="text-xs text-muted-foreground mt-0.5">cm</p>
-                    <p className="text-xs text-muted-foreground">Taille</p>
+                    <p className="text-xs text-muted-foreground">{t('settings.height_stat')}</p>
                   </div>
                   <div className="rounded-xl border border-white/10 bg-white/5 p-3 text-center">
                     <p className={`text-2xl font-bold font-heading ${bmiStatus?.color ?? 'text-foreground'}`}>{bmi ? bmi.toFixed(1) : '—'}</p>
-                    <p className="text-xs text-muted-foreground mt-0.5">IMC</p>
-                    <p className="text-xs text-muted-foreground">Corpulence</p>
+                    <p className="text-xs text-muted-foreground mt-0.5">{t('settings.bmi_stat')}</p>
+                    <p className="text-xs text-muted-foreground">{t('settings.bmi_label')}</p>
                   </div>
                 </div>
 
