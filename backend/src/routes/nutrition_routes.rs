@@ -59,9 +59,10 @@ async fn create_log(
     let id = Uuid::new_v4().to_string();
     let patient_id = claims.sub.to_string();
     let calories = payload.proteins * 4.0 + payload.carbs * 4.0 + payload.fats * 9.0;
+    let logged_at = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     sqlx::query(
-        "INSERT INTO nutrition_logs (id, patient_id, meal_name, proteins, carbs, fats) VALUES (?, ?, ?, ?, ?, ?)",
+        "INSERT INTO nutrition_logs (id, patient_id, meal_name, proteins, carbs, fats, logged_at) VALUES (?, ?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&patient_id)
@@ -69,6 +70,7 @@ async fn create_log(
     .bind(payload.proteins)
     .bind(payload.carbs)
     .bind(payload.fats)
+    .bind(&logged_at)
     .execute(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -81,6 +83,6 @@ async fn create_log(
         carbs: payload.carbs,
         fats: payload.fats,
         calories,
-        logged_at: None,
+        logged_at: Some(logged_at),
     }))
 }

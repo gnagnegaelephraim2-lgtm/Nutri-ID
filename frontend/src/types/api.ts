@@ -16,7 +16,7 @@ export interface UserProfile {
   cmu_active: boolean;
   cmu_expiry_date: string | null;
   religion: string | null;
-  created_at: string;
+  created_at?: string | null;
 }
 
 export interface AuthResponse {
@@ -75,7 +75,7 @@ export interface NutritionLog {
   carbs: number;
   fats: number;
   calories: number;
-  logged_at: string;
+  logged_at: string | null;
 }
 
 export interface NutritionLogPayload {
@@ -143,7 +143,7 @@ export interface HealthRecord {
   record_type: RecordType;
   ipfs_cid: string;
   document_hash: string;
-  created_at: string;
+  created_at: string | null;
 }
 
 export interface RecordPayload {

@@ -55,15 +55,17 @@ async fn create_record(
     let id = Uuid::new_v4().to_string();
     // Always use the token's subject as patient_id — ignore any client-supplied value
     let patient_id = claims.sub.to_string();
+    let created_at = chrono::Utc::now().format("%Y-%m-%d %H:%M:%S").to_string();
 
     sqlx::query(
-        "INSERT INTO health_records (id, patient_id, record_type, ipfs_cid, document_hash) VALUES (?, ?, ?, ?, ?)",
+        "INSERT INTO health_records (id, patient_id, record_type, ipfs_cid, document_hash, created_at) VALUES (?, ?, ?, ?, ?, ?)",
     )
     .bind(&id)
     .bind(&patient_id)
     .bind(&payload.record_type)
     .bind(&payload.ipfs_cid)
     .bind(&payload.document_hash)
+    .bind(&created_at)
     .execute(&pool)
     .await
     .map_err(|e| (StatusCode::INTERNAL_SERVER_ERROR, e.to_string()))?;
@@ -76,6 +78,6 @@ async fn create_record(
         ipfs_cid: payload.ipfs_cid,
         document_hash: payload.document_hash,
         blockchain_tx_hash: None,
-        created_at: None,
+        created_at: Some(created_at),
     }))
 }

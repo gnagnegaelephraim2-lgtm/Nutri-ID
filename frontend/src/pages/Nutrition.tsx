@@ -297,7 +297,7 @@ export default function Nutrition() {
                   <div key={log.id} className="flex items-center justify-between py-2 border-b border-[color:var(--glass-border)] last:border-0">
                     <div>
                       <p className="text-sm font-medium text-foreground">{log.meal_name}</p>
-                      <p className="text-xs text-muted-foreground">{new Date(log.logged_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' })}</p>
+                      <p className="text-xs text-muted-foreground">{log.logged_at ? new Date(log.logged_at).toLocaleString('fr-FR', { dateStyle: 'short', timeStyle: 'short' }) : '—'}</p>
                     </div>
                     <div className="text-right">
                       <p className="text-sm font-semibold text-ci-orange">{Math.round(log.calories)} kcal</p>

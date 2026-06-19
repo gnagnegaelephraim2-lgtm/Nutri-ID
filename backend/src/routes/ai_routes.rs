@@ -178,7 +178,7 @@ async fn chat_handler(
     }));
 
     let claude_req = serde_json::json!({
-        "model": "claude-opus-4-6",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 800,
         "system": system_prompt,
         "messages": messages
@@ -261,7 +261,7 @@ async fn analyze_food_handler(
         {\"meal_name\": \"...\", \"proteins\": <number>, \"carbs\": <number>, \"fats\": <number>, \"description\": \"...\"}";
 
     let claude_req = serde_json::json!({
-        "model": "claude-opus-4-6",
+        "model": "claude-sonnet-4-6",
         "max_tokens": 800,
         "messages": [{
             "role": "user",

@@ -145,7 +145,7 @@ export default function Records() {
                     <div className="flex items-start justify-between gap-3">
                       <div className="flex-1 min-w-0">
                         <p className="font-semibold text-ci-orange truncate">{r.record_type.replace('_', ' ')}</p>
-                        <p className="text-xs text-muted-foreground mt-0.5">ID: {r.id.substring(0, 8)}… | {new Date(r.created_at).toLocaleDateString('fr-FR')}</p>
+                        <p className="text-xs text-muted-foreground mt-0.5">ID: {r.id.substring(0, 8)}… | {r.created_at ? new Date(r.created_at).toLocaleDateString('fr-FR') : '—'}</p>
                         <div className="mt-2">
                           {hasCid ? (
                             <a href={`https://gateway.pinata.cloud/ipfs/${r.ipfs_cid}`} target="_blank" rel="noreferrer" className="flex items-center gap-1 text-xs text-ci-green hover:underline">

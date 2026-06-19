@@ -445,7 +445,10 @@ export default function Settings() {
                     </div>
                     <div>
                       <label className="text-sm text-muted-foreground flex items-center gap-1"><MapPin className="h-3 w-3" /> Ville</label>
-                      <Select onValueChange={(v) => svProfile('allergies', v)}>
+                      <Select
+                        defaultValue={localStorage.getItem('nutriid_city') ?? ''}
+                        onValueChange={(v) => localStorage.setItem('nutriid_city', v)}
+                      >
                         <SelectTrigger className="mt-1"><SelectValue placeholder="Votre ville" /></SelectTrigger>
                         <SelectContent>
                           {ivorianCities.map((c) => <SelectItem key={c} value={c}>{c}</SelectItem>)}
