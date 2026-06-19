@@ -11,8 +11,16 @@
 [build.environment]
   NODE_VERSION = "20"
   # VITE_API_URL must be set in Netlify Dashboard → Site → Environment Variables
-  # Value: your Railway backend URL e.g. https://nutriid-backend.up.railway.app
+  # Value: your backend URL e.g. https://nutriid-backend.up.railway.app
   # IMPORTANT: tick "Available at build time" so Vite injects it into the bundle.
+
+# ── OPTIONAL: API proxy — prevents SPA catch-all from swallowing /api/* calls ──
+# Uncomment and replace with your real backend URL if VITE_API_URL is not set:
+# [[redirects]]
+#   from  = "/api/*"
+#   to    = "https://your-backend.up.railway.app/api/:splat"
+#   status = 200
+#   force  = true
 
 # ── SPA Fallback — all routes served by index.html (React Router) ─────────────
 [[redirects]]

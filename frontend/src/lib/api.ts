@@ -30,7 +30,11 @@ import type {
   FoodAnalysisResult,
 } from '@/types/api';
 
-const BASE = (import.meta.env.VITE_API_URL as string) ?? '';
+const BASE = (import.meta.env.VITE_API_URL as string) || '';
+
+if (!BASE && import.meta.env.DEV) {
+  console.warn('[Nutri-ID] VITE_API_URL is not set — API calls will use relative paths. Set it in .env.development or the Netlify dashboard.');
+}
 
 async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
   const token = localStorage.getItem('nutriid_token');
@@ -42,19 +46,30 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  const res = await fetch(`${BASE}${path}`, { ...options, headers });
+  let res: Response;
+  try {
+    res = await fetch(`${BASE}${path}`, { ...options, headers });
+  } catch {
+    throw new Error('Serveur inaccessible. Vérifiez votre connexion internet ou réessayez plus tard.');
+  }
 
   if (!res.ok) {
-    let errMsg = `HTTP ${res.status}`;
+    let errMsg = `Erreur ${res.status}`;
     try {
       const text = await res.text();
+      if (text.trimStart().startsWith('<')) {
+        // Got HTML back — likely a Netlify catch-all redirect, backend URL not configured
+        throw new Error('Le service backend est inaccessible. Contactez l\'administrateur.');
+      }
       try {
         const errData = JSON.parse(text);
         errMsg = errData.error || errData.message || text || errMsg;
       } catch {
         errMsg = text || errMsg;
       }
-    } catch { /* ignore */ }
+    } catch (inner) {
+      if (inner instanceof Error) throw inner;
+    }
     throw new Error(errMsg);
   }
 
