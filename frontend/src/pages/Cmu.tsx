@@ -9,6 +9,7 @@ import { Button } from '@/components/ui/button';
 import { Separator } from '@/components/ui/separator';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/hooks/useI18n';
 
 // ─── Coverage rates per service ───────────────────────────────────────────────
 
@@ -33,6 +34,7 @@ const CONTACTS = [
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Cmu() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const isCmuActive = !!user?.cmu_active;
 
@@ -54,9 +56,9 @@ export default function Cmu() {
     const daysUsed = Math.max(0, 365 - diffDays);
     progressPct  = Math.min(100, Math.round((daysUsed / 365) * 100));
 
-    if (diffDays <= 0)  { urgencyColor = 'text-red-400';    urgencyMsg = 'Couverture expirée'; }
-    else if (diffDays <= 30) { urgencyColor = 'text-ci-orange'; urgencyMsg = `Expire dans ${diffDays} jour${diffDays > 1 ? 's' : ''}`; }
-    else                { urgencyColor = 'text-ci-green';   urgencyMsg = `${diffDays} jours restants`; }
+    if (diffDays <= 0)  { urgencyColor = 'text-red-400';    urgencyMsg = t('cmu.expired'); }
+    else if (diffDays <= 30) { urgencyColor = 'text-ci-orange'; urgencyMsg = t('cmu.expires_in').replace('{n}', diffDays.toString()); }
+    else                { urgencyColor = 'text-ci-green';   urgencyMsg = t('cmu.days_left').replace('{n}', diffDays.toString()); }
   }
 
   return (

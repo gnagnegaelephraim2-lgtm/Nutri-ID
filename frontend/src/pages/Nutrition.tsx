@@ -16,6 +16,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { NutriBot } from '@/components/NutriBot';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 import type { NutritionLog } from '@/types/api';
 
 const mealSchema = z.object({
@@ -54,6 +55,7 @@ function buildRadarData(logs: NutritionLog[]) {
 }
 
 function TodaySummary({ logs }: { logs: NutritionLog[] }) {
+  const { t } = useI18n();
   const today = new Date().toISOString().slice(0, 10);
   const todayLogs = logs.filter((l) => l.logged_at?.startsWith(today));
   const totP = todayLogs.reduce((s, l) => s + l.proteins, 0);
@@ -64,11 +66,11 @@ function TodaySummary({ logs }: { logs: NutritionLog[] }) {
 
   return (
     <Card className="border-ci-green/30">
-      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-ci-green" />Aujourd&apos;hui</CardTitle></CardHeader>
+      <CardHeader className="pb-2"><CardTitle className="flex items-center gap-2 text-base"><BarChart3 className="h-4 w-4 text-ci-green" />{t('nutrition.today')}</CardTitle></CardHeader>
       <CardContent>
         <div className="text-center mb-4">
           <p className="text-4xl font-bold font-heading text-ci-orange">{totKcal}</p>
-          <p className="text-sm text-muted-foreground">kcal aujourd&apos;hui</p>
+          <p className="text-sm text-muted-foreground">{t('nutrition.kcal_today')}</p>
         </div>
         <div className="space-y-3">
           {[
@@ -93,6 +95,7 @@ function TodaySummary({ logs }: { logs: NutritionLog[] }) {
 }
 
 export default function Nutrition() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const { data: logs, isLoading } = useQuery({ queryKey: ['nutrition'], queryFn: api.getNutrition });
   const { register, handleSubmit, watch, reset, setValue, formState: { errors } } = useForm<MealForm>({
@@ -142,13 +145,13 @@ export default function Nutrition() {
       setImagePreview(null);
       setImageBase64(null);
     },
-    onError: (err: Error) => toast.error(`Analyse échouée : ${err.message}`),
+    onError: (err: Error) => toast.error(t('nutrition.analysis_failed').replace('{msg}', err.message)),
   });
 
   const mutation = useMutation({
     mutationFn: api.postNutrition,
     onSuccess: () => {
-      toast.success('Repas enregistré !');
+      toast.success(t('nutrition.meal_saved'));
       reset();
       qc.invalidateQueries({ queryKey: ['nutrition'] });
       qc.invalidateQueries({ queryKey: ['dashboard'] });
@@ -163,16 +166,16 @@ export default function Nutrition() {
       <div className="p-4 lg:p-6 space-y-6">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <UtensilsCrossed className="h-6 w-6 text-ci-orange" /> Nutri-ID
+            <UtensilsCrossed className="h-6 w-6 text-ci-orange" /> {t('nutrition.page_title')}
           </h1>
-          <p className="text-sm text-muted-foreground">Suivi nutritionnel localisé pour la Côte d&apos;Ivoire.</p>
+          <p className="text-sm text-muted-foreground">{t('nutrition.page_subtitle')}</p>
         </div>
 
         {/* Photo analysis card */}
         <Card className="border-ci-orange/30">
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Camera className="h-4 w-4 text-ci-orange" /> Analyser une photo de repas
+              <Camera className="h-4 w-4 text-ci-orange" /> {t('nutrition.analyze_photo')}
             </CardTitle>
           </CardHeader>
           <CardContent>
@@ -194,15 +197,15 @@ export default function Nutrition() {
             <div className="flex flex-col sm:flex-row gap-3 items-start">
               <div className="flex gap-2">
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => cameraInputRef.current?.click()}>
-                  <Camera className="h-4 w-4" /> Prendre une photo
+                  <Camera className="h-4 w-4" /> {t('nutrition.take_photo')}
                 </Button>
                 <Button variant="outline" size="sm" className="gap-2" onClick={() => fileInputRef.current?.click()}>
-                  <ImageIcon className="h-4 w-4" /> Depuis la galerie
+                  <ImageIcon className="h-4 w-4" /> {t('nutrition.from_gallery')}
                 </Button>
               </div>
               {imagePreview && (
                 <div className="flex items-center gap-3">
-                  <img src={imagePreview} alt="Aperçu" className="h-20 w-28 object-cover rounded-lg border border-[color:var(--glass-border)]" />
+                  <img src={imagePreview} alt={t('nutrition.preview')} className="h-20 w-28 object-cover rounded-lg border border-[color:var(--glass-border)]" />
                   <Button
                     size="sm"
                     className="gap-2 bg-ci-orange hover:bg-ci-orange/90"
@@ -210,13 +213,13 @@ export default function Nutrition() {
                     onClick={() => analyzeMutation.mutate()}
                   >
                     <Sparkles className="h-4 w-4" />
-                    {analyzeMutation.isPending ? 'Analyse...' : 'Analyser avec l\'IA'}
+                    {analyzeMutation.isPending ? t('nutrition.analyzing') : t('nutrition.analyze_btn')}
                   </Button>
                 </div>
               )}
             </div>
             {!imagePreview && (
-              <p className="text-xs text-muted-foreground mt-2">Les macros seront pré-remplies automatiquement dans le formulaire.</p>
+              <p className="text-xs text-muted-foreground mt-2">{t('nutrition.macros_hint')}</p>
             )}
           </CardContent>
         </Card>
@@ -224,20 +227,20 @@ export default function Nutrition() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           {/* Form */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Enregistrer un repas</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-base">{t('nutrition.log_form')}</CardTitle></CardHeader>
             <CardContent>
               <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
                 <div>
-                  <label className="text-sm text-muted-foreground">Nom du repas</label>
-                  <Input className="mt-1" placeholder="Ex: Garba, Foutou banane..." {...register('meal_name')} />
+                  <label className="text-sm text-muted-foreground">{t('nutrition.meal_name')}</label>
+                  <Input className="mt-1" placeholder={t('nutrition.meal_placeholder')} {...register('meal_name')} />
                   {errors.meal_name && <p className="text-xs text-red-400 mt-1">{errors.meal_name.message}</p>}
                 </div>
                 <div className="grid grid-cols-3 gap-2">
-                  {[
-                    { label: 'Protéines (g)', field: 'proteins' as const },
-                    { label: 'Glucides (g)', field: 'carbs' as const },
-                    { label: 'Lipides (g)', field: 'fats' as const },
-                  ].map(({ label, field }) => (
+                  {([
+                    { label: t('nutrition.proteins'), field: 'proteins' as const },
+                    { label: t('nutrition.carbs'), field: 'carbs' as const },
+                    { label: t('nutrition.fats'), field: 'fats' as const },
+                  ] as { label: string; field: 'proteins' | 'carbs' | 'fats' }[]).map(({ label, field }) => (
                     <div key={field}>
                       <label className="text-xs text-muted-foreground">{label}</label>
                       <Input className="mt-1" type="number" min="0" step="0.1" placeholder="0" {...register(field)} />
@@ -249,7 +252,7 @@ export default function Nutrition() {
                 )}
                 <Button type="submit" className="w-full gap-2" disabled={mutation.isPending}>
                   <Save className="h-4 w-4" />
-                  {mutation.isPending ? 'Enregistrement...' : 'Enregistrer'}
+                  {mutation.isPending ? t('nutrition.saving') : t('nutrition.save_btn')}
                 </Button>
               </form>
             </CardContent>
@@ -264,7 +267,7 @@ export default function Nutrition() {
 
           {/* Radar chart */}
           <Card>
-            <CardHeader className="pb-2"><CardTitle className="text-base">Analyse 7 jours</CardTitle></CardHeader>
+            <CardHeader className="pb-2"><CardTitle className="text-base">{t('nutrition.chart_title')}</CardTitle></CardHeader>
             <CardContent>
               <div className="h-48">
                 <ResponsiveContainer width="100%" height="100%">
@@ -273,7 +276,7 @@ export default function Nutrition() {
                     <PolarAngleAxis dataKey="label" tick={{ fill: '#9CA3AF', fontSize: 11 }} />
                     <Tooltip
                       contentStyle={{ background: '#0A0F1E', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 8 }}
-                      formatter={(v: number) => [`${v}%`, 'Objectif']}
+                      formatter={(v: number) => [`${v}%`, t('nutrition.radar_target')]}
                     />
                     <Radar dataKey="value" stroke="#F77F00" fill="#F77F00" fillOpacity={0.3} />
                   </RadarChart>
@@ -285,12 +288,12 @@ export default function Nutrition() {
 
         {/* Logs list */}
         <Card>
-          <CardHeader className="pb-2"><CardTitle className="text-base">Repas récents</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base">{t('nutrition.recent_meals')}</CardTitle></CardHeader>
           <CardContent>
             {isLoading ? (
               <div className="space-y-2">{Array.from({ length: 4 }).map((_, i) => <Skeleton key={i} className="h-12 w-full" />)}</div>
             ) : !logs?.length ? (
-              <p className="text-center text-muted-foreground py-6">Aucun repas enregistré. Commencez par logger un repas !</p>
+              <p className="text-center text-muted-foreground py-6">{t('nutrition.empty')}</p>
             ) : (
               <div className="space-y-2">
                 {logs.map((log) => (
@@ -314,7 +317,7 @@ export default function Nutrition() {
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="flex items-center gap-2 text-base">
-              <Brain className="h-4 w-4 text-ci-green" /> Assistant IA NutriBot
+              <Brain className="h-4 w-4 text-ci-green" /> {t('nutrition.nutri_bot')}
             </CardTitle>
           </CardHeader>
           <CardContent>

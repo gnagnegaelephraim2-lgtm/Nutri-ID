@@ -5,6 +5,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Skeleton } from '@/components/ui/skeleton';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 import type { FastType } from '@/types/api';
 
 // ─── Phase info (mirrors Fasting.tsx PHASES) ─────────────────────────────────
@@ -61,6 +62,7 @@ const FAST_LABELS: Record<FastType, string> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function SpiritualWidget() {
+  const { t } = useI18n();
   // Uses the SAME queryKeys as Fasting.tsx → React Query cache keeps them in sync
   const { data: plans, isLoading } = useQuery({
     queryKey: ['fasting-plans'],
@@ -95,10 +97,10 @@ export function SpiritualWidget() {
         </CardHeader>
         <CardContent className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Aucun plan de jeûne actif. Commencez votre parcours spirituel.
+            {t('spiritual.empty')}
           </p>
           <Link to="/fasting" className="flex items-center gap-1.5 text-sm font-medium text-ci-orange hover:underline">
-            Démarrer un jeûne <ArrowRight className="h-3.5 w-3.5" />
+            {t('spiritual.start')} <ArrowRight className="h-3.5 w-3.5" />
           </Link>
         </CardContent>
       </Card>
@@ -176,7 +178,7 @@ export function SpiritualWidget() {
         {/* Mini Calendrier d'Engagement — 7 derniers jours */}
         <div>
           <p className="text-xs text-muted-foreground mb-2 font-medium uppercase tracking-wide">
-            Calendrier d'Engagement — 7 jours
+            {t('spiritual.calendar')}
           </p>
           {logsLoading ? (
             <Skeleton className="h-10 w-full" />
@@ -237,7 +239,7 @@ export function SpiritualWidget() {
           to="/fasting"
           className="flex items-center gap-1.5 text-sm font-medium text-ci-orange hover:underline"
         >
-          Voir le plan complet <ArrowRight className="h-3.5 w-3.5" />
+          {t('spiritual.see_plan')} <ArrowRight className="h-3.5 w-3.5" />
         </Link>
 
       </CardContent>

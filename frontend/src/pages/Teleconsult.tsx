@@ -18,6 +18,7 @@ import {
 } from '@/components/ui/dialog';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 import type { Teleconsult as TeleconsultType, TeleconsultStatus } from '@/types/api';
 
 // ─── Schema ───────────────────────────────────────────────────────────────────
@@ -31,12 +32,7 @@ type TeleconsultForm = z.infer<typeof teleconsultSchema>;
 
 // ─── Status config ────────────────────────────────────────────────────────────
 
-const STATUS_MAP: Record<TeleconsultStatus, { label: string; variant: 'default' | 'green' | 'secondary' | 'destructive' }> = {
-  pending:   { label: 'En attente',  variant: 'default' },
-  confirmed: { label: 'Confirmé',    variant: 'green' },
-  completed: { label: 'Terminé',     variant: 'secondary' },
-  canceled:  { label: 'Annulé',      variant: 'destructive' },
-};
+type StatusMap = Record<TeleconsultStatus, { label: string; variant: 'default' | 'green' | 'secondary' | 'destructive' }>;
 
 // Steps shown in the progress stepper
 const STATUS_STEPS: TeleconsultStatus[] = ['pending', 'confirmed', 'completed'];
@@ -104,17 +100,19 @@ function ConsultCard({
   doctorName,
   doctorSpecialty,
   onCancel,
+  statusMap,
 }: {
   tc: TeleconsultType;
   doctorName?: string;
   doctorSpecialty?: string;
   onCancel: () => void;
+  statusMap: StatusMap;
 }) {
   const dt         = new Date(tc.scheduled_at);
   const countdown  = useCountdown(tc.scheduled_at);
   const canCancel  = tc.status === 'pending' || tc.status === 'confirmed';
   const canJoin    = tc.status === 'confirmed' && !!tc.meeting_link;
-  const { label, variant } = STATUS_MAP[tc.status];
+  const { label, variant } = statusMap[tc.status];
 
   const currentStep = STATUS_STEPS.indexOf(tc.status);
 
@@ -254,9 +252,17 @@ function ConsultCard({
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Teleconsult() {
+  const { t } = useI18n();
   const qc = useQueryClient();
   const [cancelId, setCancelId]         = useState<string | null>(null);
   const [selectedDoctor, setSelectedDoctor] = useState<string>('');
+
+  const STATUS_MAP: StatusMap = {
+    pending:   { label: t('teleconsult.status_pending'),   variant: 'default' },
+    confirmed: { label: t('teleconsult.status_confirmed'), variant: 'green' },
+    completed: { label: t('teleconsult.status_done'),      variant: 'secondary' },
+    canceled:  { label: t('teleconsult.status_cancelled'), variant: 'destructive' },
+  };
 
   const { data: consults, isLoading } = useQuery({ queryKey: ['teleconsults'], queryFn: api.getTeleconsults });
   const { data: doctors }             = useQuery({ queryKey: ['doctors'], queryFn: api.getDoctors });
@@ -271,7 +277,7 @@ export default function Teleconsult() {
       notes:        data.notes || null,
     }),
     onSuccess: () => {
-      toast.success('Demande de consultation envoyée !');
+      toast.success(t('teleconsult.sent'));
       reset();
       setSelectedDoctor('');
       qc.invalidateQueries({ queryKey: ['teleconsults'] });
@@ -282,7 +288,7 @@ export default function Teleconsult() {
   const cancelMutation = useMutation({
     mutationFn: (id: string) => api.updateTeleconsultStatus(id, 'canceled'),
     onSuccess: () => {
-      toast.success('Consultation annulée.');
+      toast.success(t('teleconsult.cancelled'));
       setCancelId(null);
       qc.invalidateQueries({ queryKey: ['teleconsults'] });
     },
@@ -300,10 +306,10 @@ export default function Teleconsult() {
         {/* Header */}
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <Video className="h-6 w-6 text-ci-orange" /> Téléconsultation
+            <Video className="h-6 w-6 text-ci-orange" /> {t('teleconsult.title')}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Consultez un médecin à distance, depuis chez vous, en vidéo ou par messagerie sécurisée.
+            {t('teleconsult.subtitle')}
           </p>
         </div>
 
@@ -443,6 +449,7 @@ export default function Teleconsult() {
                     doctorName={assignedDoctor?.full_name ?? undefined}
                     doctorSpecialty={assignedDoctor?.specialty ?? undefined}
                     onCancel={() => setCancelId(tc.id)}
+                    statusMap={STATUS_MAP}
                   />
                 );
               })

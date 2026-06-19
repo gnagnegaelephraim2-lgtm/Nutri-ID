@@ -10,6 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 
 const schema = z.object({
   new_password: z.string().min(8, '8 caractères minimum'),
@@ -21,6 +22,7 @@ const schema = z.object({
 type Form = z.infer<typeof schema>;
 
 export default function ResetPassword() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
   const token = searchParams.get('token') ?? '';
@@ -44,12 +46,12 @@ export default function ResetPassword() {
         <Card className="max-w-sm w-full">
           <CardContent className="pt-8 text-center">
             <ShieldCheck className="h-10 w-10 text-red-400 mx-auto mb-3" />
-            <p className="text-foreground font-semibold">Lien invalide</p>
+            <p className="text-foreground font-semibold">{t('reset_pwd.invalid_title')}</p>
             <p className="text-sm text-muted-foreground mt-1 mb-4">
-              Ce lien de réinitialisation est invalide ou a expiré.
+              {t('reset_pwd.invalid_desc')}
             </p>
             <Button asChild variant="outline" className="w-full">
-              <Link to="/forgot-password">Demander un nouveau lien</Link>
+              <Link to="/forgot-password">{t('reset_pwd.request_new')}</Link>
             </Button>
           </CardContent>
         </Card>
@@ -74,30 +76,30 @@ export default function ResetPassword() {
                 <Plus className="h-7 w-7 text-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Nouveau mot de passe</CardTitle>
+            <CardTitle className="text-xl">{t('reset_pwd.title')}</CardTitle>
             <CardDescription>
-              Choisissez un mot de passe sécurisé d&apos;au moins 8 caractères.
+              {t('reset_pwd.desc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Nouveau mot de passe</label>
-                <Input type="password" placeholder="••••••••" {...register('new_password')} />
+                <label className="text-sm font-medium text-muted-foreground">{t('reset_pwd.new_pwd')}</label>
+                <Input type="password" placeholder={t('login.pwd_placeholder')} {...register('new_password')} />
                 {errors.new_password && <p className="text-xs text-red-400">{errors.new_password.message}</p>}
               </div>
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Confirmer le mot de passe</label>
-                <Input type="password" placeholder="••••••••" {...register('confirm_password')} />
+                <label className="text-sm font-medium text-muted-foreground">{t('reset_pwd.confirm_pwd')}</label>
+                <Input type="password" placeholder={t('login.pwd_placeholder')} {...register('confirm_password')} />
                 {errors.confirm_password && <p className="text-xs text-red-400">{errors.confirm_password.message}</p>}
               </div>
               <Button type="submit" className="w-full bg-ci-green hover:bg-ci-green/90" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Réinitialisation...' : 'Réinitialiser le mot de passe →'}
+                {mutation.isPending ? t('reset_pwd.resetting') : t('reset_pwd.submit')}
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
               <Link to="/login" className="inline-flex items-center gap-1 text-ci-green hover:underline">
-                <ArrowLeft className="h-3 w-3" /> Retour à la connexion
+                <ArrowLeft className="h-3 w-3" /> {t('reset_pwd.back')}
               </Link>
             </p>
           </CardContent>

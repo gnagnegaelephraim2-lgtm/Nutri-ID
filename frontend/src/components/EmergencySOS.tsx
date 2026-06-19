@@ -1,56 +1,56 @@
 import { useState } from 'react';
 import { Phone, X, AlertTriangle, MapPin } from 'lucide-react';
 import { Link } from 'react-router-dom';
-
-// ─── Emergency contacts — Côte d'Ivoire ──────────────────────────────────────
-
-const EMERGENCY = [
-  {
-    number: '185',
-    label: 'SAMU',
-    desc: 'Urgence médicale · ambulance',
-    emoji: '🚑',
-    bg: 'bg-red-600',
-    text: 'text-white',
-  },
-  {
-    number: '110',
-    label: 'Police Secours',
-    desc: 'Sécurité · violence · crime',
-    emoji: '🚓',
-    bg: 'bg-blue-700',
-    text: 'text-white',
-  },
-  {
-    number: '180',
-    label: 'Sapeurs-Pompiers',
-    desc: 'Incendie · accident · rescue',
-    emoji: '🚒',
-    bg: 'bg-orange-600',
-    text: 'text-white',
-  },
-  {
-    number: '116',
-    label: 'SOS Enfants',
-    desc: 'Protection de l\'enfance',
-    emoji: '👶',
-    bg: 'bg-purple-600',
-    text: 'text-white',
-  },
-  {
-    number: '0800 888 99',
-    label: 'CNAM',
-    desc: 'Numéro vert CMU — Gratuit',
-    emoji: '🏥',
-    bg: 'bg-ci-green',
-    text: 'text-white',
-  },
-] as const;
+import { useI18n } from '@/hooks/useI18n';
 
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export function EmergencySOS() {
+  const { t } = useI18n();
   const [open, setOpen] = useState(false);
+
+  const EMERGENCY = [
+    {
+      number: '185',
+      label: 'SAMU',
+      desc: t('sos.samu'),
+      emoji: '🚑',
+      bg: 'bg-red-600',
+      text: 'text-white',
+    },
+    {
+      number: '110',
+      label: 'Police Secours',
+      desc: t('sos.police'),
+      emoji: '🚓',
+      bg: 'bg-blue-700',
+      text: 'text-white',
+    },
+    {
+      number: '180',
+      label: 'Sapeurs-Pompiers',
+      desc: t('sos.fire'),
+      emoji: '🚒',
+      bg: 'bg-orange-600',
+      text: 'text-white',
+    },
+    {
+      number: '116',
+      label: 'SOS Enfants',
+      desc: t('sos.children'),
+      emoji: '👶',
+      bg: 'bg-purple-600',
+      text: 'text-white',
+    },
+    {
+      number: '0800 888 99',
+      label: 'CNAM',
+      desc: t('sos.cnam'),
+      emoji: '🏥',
+      bg: 'bg-ci-green',
+      text: 'text-white',
+    },
+  ];
 
   return (
     <>
@@ -84,7 +84,7 @@ export function EmergencySOS() {
             <div className="flex items-center justify-between px-5 py-4 border-b border-[color:var(--glass-border)]">
               <div className="flex items-center gap-2">
                 <AlertTriangle className="h-5 w-5 text-red-500" />
-                <span className="font-heading font-bold text-foreground">Numéros d'urgence</span>
+                <span className="font-heading font-bold text-foreground">{t('sos.title')}</span>
               </div>
               <button
                 onClick={() => setOpen(false)}
@@ -129,7 +129,7 @@ export function EmergencySOS() {
                 className="flex items-center justify-center gap-2 w-full rounded-xl border border-ci-green/40 bg-ci-green/10 text-ci-green text-sm font-medium py-2.5 hover:bg-ci-green/20 transition-colors"
               >
                 <MapPin className="h-4 w-4" />
-                Trouver une pharmacie de garde
+                {t('sos.pharmacy')}
               </Link>
             </div>
           </div>

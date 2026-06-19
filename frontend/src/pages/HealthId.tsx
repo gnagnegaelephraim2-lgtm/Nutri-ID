@@ -12,9 +12,11 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
 import { useWeb3 } from '@/hooks/useWeb3';
 import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/hooks/useI18n';
 import { NETWORKS } from '@/lib/web3';
 
 export default function HealthId() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const { isConnected, userAddress, chainId, addresses, connect, disconnect, isConnecting, error: web3Error } = useWeb3();
   const [walletInput, setWalletInput] = useState(localStorage.getItem('health_id_wallet') || '');
@@ -27,7 +29,7 @@ export default function HealthId() {
     setMintedTokenId(null);
     localStorage.removeItem('health_id_wallet');
     setWalletInput('');
-    toast.info('Portefeuille déconnecté');
+    toast.info(t('health_id.wallet_disconnected'));
   }
 
   const name = user ? (user.full_name || user.email.split('@')[0]).toUpperCase() : '—';

@@ -28,7 +28,7 @@ export default function Login() {
 
   const mutation = useMutation({
     mutationFn: (data: LoginForm) => login(data),
-    onError: (err: Error) => toast.error(err.message || 'Email ou mot de passe incorrect.'),
+    onError: (err: Error) => toast.error(err.message || t('login.error_toast')),
   });
 
   return (
@@ -57,12 +57,12 @@ export default function Login() {
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground">{t('login.email')}</label>
-                <Input type="email" placeholder="votre@email.com" {...register('email')} />
+                <Input type="email" placeholder={t('login.email_placeholder')} {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1.5">
                 <label className="text-sm font-medium text-muted-foreground">{t('login.password')}</label>
-                <Input type="password" placeholder="••••••••" {...register('password')} />
+                <Input type="password" placeholder={t('login.pwd_placeholder')} {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={mutation.isPending}>

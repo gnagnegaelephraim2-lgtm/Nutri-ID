@@ -112,7 +112,7 @@ export function Sidebar({ open, onClose }: SidebarProps) {
               <button
                 onClick={handleLogout}
                 className="text-muted-foreground hover:text-ci-orange transition-colors"
-                title="Se déconnecter"
+                title={t('settings.logout_btn')}
               >
                 <LogOut className="h-4 w-4" />
               </button>

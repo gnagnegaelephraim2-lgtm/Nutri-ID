@@ -13,6 +13,7 @@ import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
 import { createRecord, saveRecordToBackend } from '@/lib/ipfs';
 import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/hooks/useI18n';
 import type { RecordType } from '@/types/api';
 
 const RECORD_TYPES: RecordType[] = [
@@ -27,6 +28,7 @@ type RecordForm = z.infer<typeof recordSchema>;
 
 export default function Records() {
   const { user, token } = useAuth();
+  const { t } = useI18n();
   const qc = useQueryClient();
   const { data: records, isLoading } = useQuery({ queryKey: ['records'], queryFn: api.getRecords });
 
@@ -65,9 +67,9 @@ export default function Records() {
     },
     onSuccess: (result) => {
       if (result) {
-        toast.success(`Enregistré sur IPFS: ${result.cid.substring(0, 20)}…`);
+        toast.success(t('records.saved_ipfs').replace('{cid}', result.cid.substring(0, 20)));
       } else {
-        toast.info('Enregistré localement. Configurez Pinata pour activer IPFS.');
+        toast.info(t('records.saved_local'));
       }
       reset();
       qc.invalidateQueries({ queryKey: ['records'] });
@@ -80,18 +82,18 @@ export default function Records() {
       <div className="p-4 lg:p-6 space-y-6">
         <div>
           <h1 className="font-heading text-2xl font-bold text-foreground flex items-center gap-2">
-            <FolderOpen className="h-6 w-6 text-ci-orange" /> Dossiers Médicaux
+            <FolderOpen className="h-6 w-6 text-ci-orange" /> {t('records.title')}
           </h1>
-          <p className="text-sm text-muted-foreground">Vos dossiers chiffrés AES-256, stockés sur IPFS.</p>
+          <p className="text-sm text-muted-foreground">{t('records.subtitle')}</p>
         </div>
 
         {/* Upload form */}
         <Card className="max-w-2xl">
-          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4 text-ci-orange" /> Nouveau Dossier</CardTitle></CardHeader>
+          <CardHeader className="pb-2"><CardTitle className="text-base flex items-center gap-2"><Upload className="h-4 w-4 text-ci-orange" /> {t('records.new')}</CardTitle></CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div>
-                <label className="text-sm text-muted-foreground">Type de Document</label>
+                <label className="text-sm text-muted-foreground">{t('records.doc_type')}</label>
                 <Select defaultValue="ORDONNANCE" onValueChange={(v) => setValue('record_type', v)}>
                   <SelectTrigger className="mt-1">
                     <SelectValue />
@@ -104,22 +106,22 @@ export default function Records() {
                 </Select>
               </div>
               <div>
-                <label className="text-sm text-muted-foreground">Contenu / Description</label>
+                <label className="text-sm text-muted-foreground">{t('records.content_label')}</label>
                 <textarea
                   className="mt-1 w-full min-h-[100px] rounded-md border border-[color:var(--glass-border)] bg-[color:var(--glass-bg)] px-3 py-2 text-sm text-foreground resize-y focus:outline-none focus:ring-1 focus:ring-ci-orange"
-                  placeholder="Décrivez le document médical..."
+                  placeholder={t('records.content_placeholder')}
                   {...register('content')}
                 />
                 {errors.content && <p className="text-xs text-red-400">{errors.content.message}</p>}
               </div>
               <div className="flex items-center gap-2 rounded-lg bg-ci-green/10 border border-ci-green/20 px-3 py-2 text-sm text-muted-foreground">
                 <Lock className="h-4 w-4 text-ci-green flex-shrink-0" />
-                Le contenu sera chiffré avec votre NIP avant tout envoi.
-                {hasPinata ? <span className="text-ci-green font-medium ml-1">IPFS actif</span> : <span className="ml-1">Configurez Pinata dans les Paramètres pour activer IPFS.</span>}
+                {t('records.encrypt_notice')}
+                {hasPinata ? <span className="text-ci-green font-medium ml-1">{t('records.ipfs_active')}</span> : <span className="ml-1">{t('records.ipfs_hint')}</span>}
               </div>
               <Button type="submit" className="gap-2" disabled={mutation.isPending}>
                 <Upload className="h-4 w-4" />
-                {mutation.isPending ? 'Chiffrement...' : 'Chiffrer & Enregistrer'}
+                {mutation.isPending ? t('records.encrypting') : t('records.encrypt_save')}
               </Button>
             </form>
           </CardContent>
@@ -133,7 +135,7 @@ export default function Records() {
         ) : !records?.length ? (
           <Card><CardContent className="py-12 text-center">
             <FolderOpen className="h-10 w-10 text-muted-foreground mx-auto mb-2" />
-            <p className="text-muted-foreground">Aucun dossier médical enregistré.</p>
+            <p className="text-muted-foreground">{t('records.empty')}</p>
           </CardContent></Card>
         ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
@@ -152,7 +154,7 @@ export default function Records() {
                               <Link2 className="h-3 w-3" /> {r.ipfs_cid.substring(0, 20)}…
                             </a>
                           ) : (
-                            <span className="flex items-center gap-1 text-xs text-muted-foreground"><Server className="h-3 w-3" /> Stockage local</span>
+                            <span className="flex items-center gap-1 text-xs text-muted-foreground"><Server className="h-3 w-3" /> {t('records.local_storage')}</span>
                           )}
                         </div>
                       </div>

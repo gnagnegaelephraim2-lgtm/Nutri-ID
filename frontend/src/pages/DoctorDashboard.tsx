@@ -11,14 +11,8 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/hooks/useI18n';
 import type { Teleconsult, TeleconsultStatus } from '@/types/api';
-
-const STATUS_LABELS: Record<TeleconsultStatus, string> = {
-  pending:   'En attente',
-  confirmed: 'Confirmée',
-  completed: 'Terminée',
-  canceled:  'Annulée',
-};
 
 const STATUS_COLORS: Record<TeleconsultStatus, string> = {
   pending:   'bg-yellow-500/20 text-yellow-400 border-yellow-500/30',
@@ -100,9 +94,17 @@ function ConfirmDialog({ consult, onClose }: ConfirmDialogProps) {
 }
 
 export default function DoctorDashboard() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [confirmTarget, setConfirmTarget] = useState<Teleconsult | null>(null);
+
+  const STATUS_LABELS: Record<TeleconsultStatus, string> = {
+    pending:   t('doctor.status_pending'),
+    confirmed: t('doctor.status_confirmed'),
+    completed: t('doctor.status_done'),
+    canceled:  t('doctor.status_cancelled'),
+  };
 
   const { data: consults = [], isLoading } = useQuery({
     queryKey: ['doctor-teleconsults'],
@@ -114,7 +116,7 @@ export default function DoctorDashboard() {
       api.updateDoctorTeleconsultStatus(id, { status: 'completed' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctor-teleconsults'] });
-      toast.success('Consultation marquée comme terminée.');
+      toast.success(t('doctor.done_toast'));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -124,7 +126,7 @@ export default function DoctorDashboard() {
       api.updateDoctorTeleconsultStatus(id, { status: 'canceled' }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['doctor-teleconsults'] });
-      toast.success('Consultation annulée.');
+      toast.success(t('doctor.cancelled_toast'));
     },
     onError: (err: Error) => toast.error(err.message),
   });
@@ -193,6 +195,7 @@ export default function DoctorDashboard() {
                     onComplete={() => completeMutation.mutate(c.id)}
                     onCancel={() => cancelMutation.mutate(c.id)}
                     isActing={completeMutation.isPending || cancelMutation.isPending}
+                    statusLabels={STATUS_LABELS}
                   />
                 ))
             }
@@ -216,6 +219,7 @@ export default function DoctorDashboard() {
                   onComplete={() => completeMutation.mutate(c.id)}
                   onCancel={() => cancelMutation.mutate(c.id)}
                   isActing={completeMutation.isPending || cancelMutation.isPending}
+                  statusLabels={STATUS_LABELS}
                 />
               ))}
             </CardContent>
@@ -233,7 +237,7 @@ export default function DoctorDashboard() {
             </CardHeader>
             <CardContent className="space-y-3">
               {past.map((c) => (
-                <ConsultCard key={c.id} consult={c} isActing={false} />
+                <ConsultCard key={c.id} consult={c} isActing={false} statusLabels={STATUS_LABELS} />
               ))}
             </CardContent>
           </Card>
@@ -251,9 +255,10 @@ interface ConsultCardProps {
   onComplete?: () => void;
   onCancel?: () => void;
   isActing: boolean;
+  statusLabels: Record<TeleconsultStatus, string>;
 }
 
-function ConsultCard({ consult, onConfirm, onComplete, onCancel, isActing }: ConsultCardProps) {
+function ConsultCard({ consult, onConfirm, onComplete, onCancel, isActing, statusLabels }: ConsultCardProps) {
   const isPast = consult.status === 'completed' || consult.status === 'canceled';
 
   return (
@@ -271,7 +276,7 @@ function ConsultCard({ consult, onConfirm, onComplete, onCancel, isActing }: Con
           </p>
         </div>
         <Badge className={`border text-xs ${STATUS_COLORS[consult.status]}`}>
-          {STATUS_LABELS[consult.status]}
+          {statusLabels[consult.status]}
         </Badge>
       </div>
 

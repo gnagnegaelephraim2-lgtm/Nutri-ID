@@ -11,6 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 
 const schema = z.object({
   email: z.string().email('Email invalide'),
@@ -18,6 +19,7 @@ const schema = z.object({
 type Form = z.infer<typeof schema>;
 
 export default function ForgotPassword() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const [resetToken, setResetToken] = useState<string | null>(null);
 
@@ -31,7 +33,7 @@ export default function ForgotPassword() {
       if (data.reset_token) {
         // Dev mode: token returned in response — redirect straight to reset page
         setResetToken(data.reset_token);
-        toast.success('Lien de réinitialisation généré.');
+        toast.success(t('forgot_pwd.success'));
       } else {
         toast.success(data.message);
       }
@@ -57,21 +59,21 @@ export default function ForgotPassword() {
                   <Mail className="h-6 w-6 text-foreground" />
                 </div>
               </div>
-              <CardTitle className="text-xl">Lien généré</CardTitle>
+              <CardTitle className="text-xl">{t('forgot_pwd.dev_title')}</CardTitle>
               <CardDescription>
-                En production, ce lien serait envoyé par email. Cliquez ci-dessous pour continuer.
+                {t('forgot_pwd.dev_desc')}
               </CardDescription>
             </CardHeader>
             <CardContent className="space-y-4">
               <div className="rounded-lg bg-muted/50 border border-border px-3 py-2">
-                <p className="text-xs text-muted-foreground mb-1">Token de réinitialisation</p>
+                <p className="text-xs text-muted-foreground mb-1">{t('forgot_pwd.dev_token')}</p>
                 <p className="font-mono text-xs text-foreground break-all">{resetToken}</p>
               </div>
               <Button
                 className="w-full bg-ci-green hover:bg-ci-green/90"
                 onClick={() => navigate(`/reset-password?token=${resetToken}`)}
               >
-                Réinitialiser le mot de passe →
+                {t('forgot_pwd.dev_continue')}
               </Button>
             </CardContent>
           </Card>
@@ -98,25 +100,25 @@ export default function ForgotPassword() {
                 <Plus className="h-7 w-7 text-foreground" />
               </div>
             </div>
-            <CardTitle className="text-xl">Mot de passe oublié</CardTitle>
+            <CardTitle className="text-xl">{t('forgot_pwd.title')}</CardTitle>
             <CardDescription>
-              Entrez votre email pour recevoir un lien de réinitialisation.
+              {t('forgot_pwd.desc')}
             </CardDescription>
           </CardHeader>
           <CardContent>
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-4">
               <div className="space-y-1.5">
-                <label className="text-sm font-medium text-muted-foreground">Adresse email</label>
-                <Input type="email" placeholder="votre@email.com" {...register('email')} />
+                <label className="text-sm font-medium text-muted-foreground">{t('forgot_pwd.email_label')}</label>
+                <Input type="email" placeholder={t('forgot_pwd.placeholder')} {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <Button type="submit" className="w-full" disabled={mutation.isPending}>
-                {mutation.isPending ? 'Envoi...' : 'Envoyer le lien →'}
+                {mutation.isPending ? t('forgot_pwd.sending') : t('forgot_pwd.send_btn')}
               </Button>
             </form>
             <p className="mt-4 text-center text-sm text-muted-foreground">
               <Link to="/login" className="inline-flex items-center gap-1 text-ci-green hover:underline">
-                <ArrowLeft className="h-3 w-3" /> Retour à la connexion
+                <ArrowLeft className="h-3 w-3" /> {t('forgot_pwd.back')}
               </Link>
             </p>
           </CardContent>

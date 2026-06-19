@@ -4,6 +4,7 @@ import { Send, Bot } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { api } from '@/lib/api';
+import { useI18n } from '@/hooks/useI18n';
 import type { AiMessage } from '@/types/api';
 
 interface Message {
@@ -19,8 +20,9 @@ function formatMarkdown(text: string): string {
 }
 
 export function NutriBot() {
-  const [messages, setMessages] = useState<Message[]>([
-    { role: 'model', text: 'Bonjour ! Je suis NutriBot, votre assistant santé IA. Posez-moi vos questions sur la nutrition, les plats ivoiriens ou votre santé.' },
+  const { t } = useI18n();
+  const [messages, setMessages] = useState<Message[]>(() => [
+    { role: 'model', text: t('nutri_bot.greeting') },
   ]);
   const [input, setInput] = useState('');
   const bottomRef = useRef<HTMLDivElement>(null);
@@ -102,7 +104,7 @@ export function NutriBot() {
           value={input}
           onChange={(e) => setInput(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Ex: Que penses-tu du Foutou ?"
+          placeholder={t('nutri_bot.placeholder')}
           disabled={mutation.isPending}
           className="flex-1"
         />

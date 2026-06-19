@@ -35,8 +35,8 @@ export default function Register() {
   const mutation = useMutation({
     mutationFn: (data: RegisterForm) =>
       authRegister({ ...data, role: 'PATIENT' }),
-    onSuccess: () => toast.success('Compte créé avec succès ! Connectez-vous.'),
-    onError: (err: Error) => toast.error(err.message || 'Erreur lors de la création du compte. Réessayez.'),
+    onSuccess: () => toast.success(t('register.success_toast')),
+    onError: (err: Error) => toast.error(err.message || t('register.error_toast')),
   });
 
   return (
@@ -66,23 +66,23 @@ export default function Register() {
             <form onSubmit={handleSubmit((d) => mutation.mutate(d))} className="space-y-3">
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">{t('register.name')}</label>
-                <Input placeholder="Gnagne, Chrys Elisée" {...register('full_name')} />
+                <Input placeholder={t('register.name_placeholder')} {...register('full_name')} />
                 {errors.full_name && <p className="text-xs text-red-400">{errors.full_name.message}</p>}
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">{t('register.email')}</label>
-                <Input type="email" placeholder="votre@email.com" {...register('email')} />
+                <Input type="email" placeholder={t('register.email_placeholder')} {...register('email')} />
                 {errors.email && <p className="text-xs text-red-400">{errors.email.message}</p>}
               </div>
               <div className="space-y-1">
                 <label className="text-sm font-medium text-muted-foreground">{t('register.password')}</label>
-                <Input type="password" placeholder="••••••••" {...register('password')} />
+                <Input type="password" placeholder={t('register.pwd_placeholder')} {...register('password')} />
                 {errors.password && <p className="text-xs text-red-400">{errors.password.message}</p>}
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-muted-foreground">{t('register.nid')}</label>
-                  <Input placeholder="CI-..." {...register('national_id')} />
+                  <Input placeholder={t('register.nid_placeholder')} {...register('national_id')} />
                 </div>
                 <div className="space-y-1">
                   <label className="text-sm font-medium text-muted-foreground">{t('register.blood')}</label>

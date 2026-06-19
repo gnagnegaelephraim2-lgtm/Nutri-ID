@@ -159,7 +159,7 @@ export default function Dashboard() {
                   <FolderOpen className="h-8 w-8 text-ci-orange flex-shrink-0" />
                   <div>
                     <p className="text-2xl font-bold font-heading text-foreground">{stats?.record_count ?? 0}</p>
-                    <p className="text-sm text-muted-foreground">Dossiers médicaux</p>
+                    <p className="text-sm text-muted-foreground">{t('dashboard.records_label')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -168,7 +168,7 @@ export default function Dashboard() {
                   <Flame className="h-8 w-8 text-ci-green flex-shrink-0" />
                   <div>
                     <p className="text-2xl font-bold font-heading text-foreground">{Math.round(stats?.calories_today ?? 0)}</p>
-                    <p className="text-sm text-muted-foreground">kcal aujourd&apos;hui</p>
+                    <p className="text-sm text-muted-foreground">{t('nutrition.kcal_today')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -179,7 +179,7 @@ export default function Dashboard() {
                     <Badge variant={stats?.cmu_active ? 'green' : 'default'}>
                       {stats?.cmu_active ? 'Actif' : 'Inactif'}
                     </Badge>
-                    <p className="text-sm text-muted-foreground mt-1">Statut CMU</p>
+                    <p className="text-sm text-muted-foreground mt-1">{t('dashboard.cmu_status')}</p>
                   </div>
                 </CardContent>
               </Card>
@@ -194,7 +194,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <TrendingUp className="h-4 w-4 text-ci-green" />
-                Score de Santé & Nutrition (7 jours)
+                {t('dashboard.chart_title')}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -227,7 +227,7 @@ export default function Dashboard() {
             <CardHeader className="pb-2">
               <CardTitle className="flex items-center gap-2 text-base">
                 <ShieldCheck className="h-4 w-4 text-ci-green" />
-                Statut CMU
+                {t('dashboard.cmu_status')}
               </CardTitle>
             </CardHeader>
             <CardContent className="text-center pt-2">
@@ -276,7 +276,7 @@ export default function Dashboard() {
                     <span className="text-sm text-foreground">{v.vaccine_name} — Dose {v.dose}</span>
                   </div>
                   <span className="text-xs text-red-400 font-medium whitespace-nowrap">
-                    En retard · {new Date(v.next_dose_at!).toLocaleDateString('fr-FR')}
+                    {t('dashboard.overdue_on').replace('{date}', new Date(v.next_dose_at!).toLocaleDateString('fr-FR'))}
                   </span>
                 </div>
               ))}

@@ -17,6 +17,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { api } from '@/lib/api';
 import { useAuth } from '@/hooks/useAuth';
+import { useI18n } from '@/hooks/useI18n';
 import type { FastType, FastingPlan, FastingLog } from '@/types/api';
 
 // ─── Fast types ────────────────────────────────────────────────────────────────
@@ -624,6 +625,7 @@ function CalendarGrid({ plan, logs }: { plan: FastingPlan; logs: FastingLog[] })
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function Fasting() {
+  const { t } = useI18n();
   const { user } = useAuth();
   const qc = useQueryClient();
 
@@ -651,7 +653,7 @@ export default function Fasting() {
       end_date: data.end_date || null,
     }),
     onSuccess: () => {
-      toast.success('Plan de jeûne créé !');
+      toast.success(t('fasting.plan_created'));
       reset();
       qc.invalidateQueries({ queryKey: ['fasting-plans'] });
     },

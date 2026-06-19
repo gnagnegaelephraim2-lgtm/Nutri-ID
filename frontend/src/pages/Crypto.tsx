@@ -6,6 +6,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { PageTransition } from '@/components/layout/PageTransition';
+import { useI18n } from '@/hooks/useI18n';
 
 // ─── Coin definitions ──────────────────────────────────────────────────────────
 
@@ -51,6 +52,7 @@ function formatCrypto(amount: number, symbol: string): string {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function Crypto() {
+  const { t } = useI18n();
   const [rates, setRates]             = useState<Partial<Record<CoinId, PriceData>>>({});
   const [loading, setLoading]         = useState(true);
   const [refreshing, setRefreshing]   = useState(false);
@@ -86,7 +88,7 @@ export default function Crypto() {
       setLastUpdated(new Date());
       setError(null);
     } catch {
-      setError('Impossible de récupérer les cours. Vérifiez votre connexion Internet.');
+      setError(t('crypto.fetch_error'));
     } finally {
       setLoading(false);
       setRefreshing(false);

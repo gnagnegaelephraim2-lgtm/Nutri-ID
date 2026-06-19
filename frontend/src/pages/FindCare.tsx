@@ -8,6 +8,7 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { PageTransition } from '@/components/layout/PageTransition';
 import { FACILITIES, type Facility } from '@/lib/facilities';
+import { useI18n } from '@/hooks/useI18n';
 
 // ─── Haversine distance (km) ──────────────────────────────────────────────────
 
@@ -98,6 +99,7 @@ const TYPE_GROUPS: Record<string, string[]> = {
 // ─── Component ────────────────────────────────────────────────────────────────
 
 export default function FindCare() {
+  const { t } = useI18n();
   const [searchParams, setSearchParams] = useSearchParams();
   const [search, setSearchState] = useState(searchParams.get('q') || '');
   const [filterGroup, setFilterGroup] = useState('all');
@@ -130,7 +132,7 @@ export default function FindCare() {
 
   const locateMe = () => {
     if (!navigator.geolocation) {
-      setLocError('Géolocalisation non supportée par ce navigateur.');
+      setLocError(t('find_care.geo_unsupported'));
       return;
     }
     setLocating(true);
@@ -144,7 +146,7 @@ export default function FindCare() {
         setLocating(false);
       },
       () => {
-        setLocError('Impossible de récupérer votre position. Vérifiez les permissions GPS.');
+        setLocError(t('find_care.geo_error'));
         setLocating(false);
       },
       { enableHighAccuracy: true, timeout: 12000 },
