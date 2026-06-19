@@ -31,7 +31,7 @@ function buildDailyKcal(logs: { logged_at: string | null; calories: number }[]) 
   }
 
   logs.forEach((log) => {
-    const day = log.logged_at?.slice(0, 10);
+    const day = log.logged_at?.slice(0, 10) ?? '';
     const idx = Object.keys(dayMap).indexOf(day);
     if (idx >= 0) result[idx].kcal += log.calories || 0;
   });
