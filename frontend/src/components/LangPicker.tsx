@@ -4,11 +4,11 @@ import { useI18nContext } from '@/contexts/I18nContext';
 import type { Lang } from '@/contexts/I18nContext';
 
 const INTERNATIONAL: { value: Lang; label: string; native: string }[] = [
-  { value: 'fr', label: 'Français',  native: 'Français' },
-  { value: 'en', label: 'English',   native: 'English'  },
-  { value: 'es', label: 'Español',   native: 'Español'  },
-  { value: 'ar', label: 'Arabic',    native: 'العربية'  },
-  { value: 'zh', label: 'Mandarin',  native: '中文'      },
+  { value: 'fr', label: 'French',   native: 'Français' },
+  { value: 'en', label: 'English',  native: 'English'  },
+  { value: 'es', label: 'Spanish',  native: 'Español'  },
+  { value: 'ar', label: 'Arabic',   native: 'العربية'  },
+  { value: 'zh', label: 'Mandarin', native: '中文'      },
 ];
 
 const LOCAL: { value: Lang; label: string; native: string }[] = [
@@ -60,7 +60,9 @@ export default function LangPicker({ variant = 'floating' }: LangPickerProps) {
       }`}
     >
       <span className="text-sm font-semibold leading-tight">{l.native}</span>
-      <span className="text-xs text-muted-foreground">{l.label}</span>
+      {l.label !== l.native && (
+        <span className="text-xs text-muted-foreground">{l.label}</span>
+      )}
     </button>
   );
 
