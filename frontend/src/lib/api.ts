@@ -46,30 +46,26 @@ async function request<T>(path: string, options: RequestInit = {}): Promise<T> {
     headers['Authorization'] = `Bearer ${token}`;
   }
 
-  let res: Response;
-  try {
-    res = await fetch(`${BASE}${path}`, { ...options, headers });
-  } catch {
+  const res = await fetch(`${BASE}${path}`, { ...options, headers }).catch(() => {
     throw new Error('Serveur inaccessible. Vérifiez votre connexion internet ou réessayez plus tard.');
-  }
+  });
 
   if (!res.ok) {
     let errMsg = `Erreur ${res.status}`;
     try {
       const text = await res.text();
       if (text.trimStart().startsWith('<')) {
-        // Got HTML back — likely a Netlify catch-all redirect, backend URL not configured
-        throw new Error('Le service backend est inaccessible. Contactez l\'administrateur.');
+        // Got HTML back — Netlify catch-all returned index.html instead of API JSON
+        errMsg = 'Service backend inaccessible. Contactez l\'administrateur.';
+      } else {
+        try {
+          const errData = JSON.parse(text) as { error?: string; message?: string };
+          errMsg = errData.error || errData.message || text || errMsg;
+        } catch {
+          errMsg = text || errMsg;
+        }
       }
-      try {
-        const errData = JSON.parse(text);
-        errMsg = errData.error || errData.message || text || errMsg;
-      } catch {
-        errMsg = text || errMsg;
-      }
-    } catch (inner) {
-      if (inner instanceof Error) throw inner;
-    }
+    } catch { /* ignore read errors */ }
     throw new Error(errMsg);
   }
 
