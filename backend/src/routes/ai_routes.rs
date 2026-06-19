@@ -163,7 +163,12 @@ async fn chat_handler(
             } else {
                 "user"
             };
-            let text = msg.parts.into_iter().map(|p| p.text).collect::<Vec<_>>().join("\n");
+            let text = msg
+                .parts
+                .into_iter()
+                .map(|p| p.text)
+                .collect::<Vec<_>>()
+                .join("\n");
             messages.push(serde_json::json!({
                 "role": role,
                 "content": text

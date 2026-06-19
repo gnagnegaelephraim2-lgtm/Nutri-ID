@@ -573,14 +573,15 @@ async fn forgot_password_handler(
 
     // ── Send reset email via Resend ──────────────────────────────────────────
     let resend_key = std::env::var("RESEND_API_KEY").unwrap_or_default();
-    let app_url = std::env::var("APP_URL")
-        .unwrap_or_else(|_| "http://localhost:5173".to_string());
+    let app_url = std::env::var("APP_URL").unwrap_or_else(|_| "http://localhost:5173".to_string());
 
     if resend_key.is_empty() {
         // Dev mode: log only, never expose in response
         tracing::warn!(
             "[DEV] Password reset token for {} — {}/reset-password?token={}",
-            payload.email, app_url, token
+            payload.email,
+            app_url,
+            token
         );
     } else {
         let reset_url = format!("{}/reset-password?token={}", app_url, token);
@@ -619,7 +620,11 @@ async fn forgot_password_handler(
             }
             Ok(r) => {
                 let status = r.status();
-                tracing::error!("Resend API error {}: failed to send to {}", status, payload.email);
+                tracing::error!(
+                    "Resend API error {}: failed to send to {}",
+                    status,
+                    payload.email
+                );
             }
             Err(e) => {
                 tracing::error!("Resend request failed: {}", e);
