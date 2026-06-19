@@ -17,7 +17,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useI18n } from '@/hooks/useI18n';
 import type { Teleconsult } from '@/types/api';
 
-function buildDailyKcal(logs: { logged_at: string; calories: number }[]) {
+function buildDailyKcal(logs: { logged_at: string | null; calories: number }[]) {
   const DAY_NAMES = ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'];
   const result: { day: string; kcal: number }[] = [];
   const dayMap: Record<string, number> = {};
