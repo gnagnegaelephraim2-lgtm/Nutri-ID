@@ -21,8 +21,8 @@ export function useNotifications() {
     if (!supported || Notification.permission !== 'granted') return;
     try {
       new Notification(title, {
-        icon: '/favicon.ico',
-        badge: '/favicon.ico',
+        icon: '/favicon.jpeg',
+        badge: '/favicon.jpeg',
         ...options,
       });
     } catch {
