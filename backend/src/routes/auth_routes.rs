@@ -399,10 +399,7 @@ async fn register_handler(
 
         let nip = match payload.national_id {
             Some(n) if !n.trim().is_empty() => n,
-            _ => format!(
-                "CI-TEMP-{}",
-                &Uuid::new_v4().to_string()[..8].to_uppercase()
-            ),
+            _ => format!("CI-TEMP-{}", Uuid::new_v4().to_string()[..8].to_uppercase()),
         };
 
         sqlx::query(
@@ -424,7 +421,7 @@ async fn register_handler(
             Some(l) if !l.trim().is_empty() => l,
             _ => format!(
                 "CI-MED-TEMP-{}",
-                &Uuid::new_v4().to_string()[..8].to_uppercase()
+                Uuid::new_v4().to_string()[..8].to_uppercase()
             ),
         };
 
